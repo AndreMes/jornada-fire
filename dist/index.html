@@ -541,12 +541,9 @@ document.addEventListener('click', function (event) {
     document.getElementById('invested').textContent = money(state.invested);
     document.getElementById('yield').textContent = 'Retorno variável';
     document.getElementById('variation').textContent = 'Oscilando agora';
-    document.getElementById('rate').textContent = money(portfolioTotal());
+    document.getElementById('rate').textContent = money(Math.max(0, state.invested) / 300) + '/mês';
     document.getElementById('cash2').textContent = money(state.cash);
     document.getElementById('hudWealth').textContent = money(state.cash + state.invested);
-    const hudLabel = document.querySelector('.wealth-hud article:nth-child(2) span');
-    if (hudLabel) hudLabel.textContent = '📊 Carteira';
-    document.getElementById('hudIncome').textContent = money(portfolioTotal());
     document.getElementById('passiveTop').textContent = money(portfolioTotal());
     const meterLabel = document.querySelector('.meterrow > div:nth-child(3) small');
     if (meterLabel) meterLabel.textContent = 'carteira';
@@ -591,4 +588,9 @@ document.addEventListener('click', function (event) {
   syncWealth();
   renderPortfolio();
 })();
-</script></body></html>
+</script><style>
+  /* HUD and portfolio summary intentionally keep only the information that drives decisions. */
+  .wealth-hud article:nth-child(2),
+  .hint,
+  #invest .wallet .split:first-of-type { display:none; }
+</style></body></html>
