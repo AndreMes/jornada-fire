@@ -247,13 +247,35 @@ document.addEventListener('click', function (event) {
       promoted = true;
     }
     const salary = state.salary;
-    const passive = state.invested > 0 ? monthlyReturn() : 0;
-    state.cash += salary + passive;
+    state.cash += salary;
     const paidFromCash = Math.min(state.cash, costs);
     state.cash -= paidFromCash;
-    if (costs > paidFromCash) state.invested -= costs - paidFromCash;
+    let remaining = costs - paidFromCash;
+    let savingsReturn = 0;
+    if (Array.isArray(state.portfolio)) {
+      if (state.portfolio[0] > 0) {
+        const savingsRate = .0055 + (Math.random() - .5) * .001;
+        savingsReturn = state.portfolio[0] * savingsRate;
+        state.portfolio[0] += savingsReturn;
+      }
+      const portfolioValue = state.portfolio.reduce((sum, value) => sum + value, 0);
+      const liquidated = Math.min(remaining, portfolioValue);
+      if (liquidated > 0 && portfolioValue > 0) {
+        state.portfolio = state.portfolio.map((value) => Math.max(0, value - liquidated * value / portfolioValue));
+        remaining -= liquidated;
+      }
+      state.portfolioDebt = Number(state.portfolioDebt || 0) + remaining;
+    } else if (remaining > 0) {
+      state.invested -= remaining;
+    }
     let interest = 0;
-    if (state.invested < 0) {
+    if (Array.isArray(state.portfolio)) {
+      if (state.portfolioDebt > 0) {
+        interest = state.portfolioDebt * DEBT_RATE;
+        state.portfolioDebt += interest;
+      }
+      state.invested = state.portfolio.reduce((sum, value) => sum + value, 0) - state.portfolioDebt;
+    } else if (state.invested < 0) {
       interest = Math.abs(state.invested) * DEBT_RATE;
       state.invested -= interest;
     }
@@ -264,7 +286,7 @@ document.addEventListener('click', function (event) {
     window.eval('draw()');
     const toast = document.createElement('div');
     toast.className = 'month-toast';
-    toast.textContent = `Mês fechado: +${currency(salary)} salário${promoted ? ' · promoção por estudos!' : ''} · +${currency(passive)} rendimentos · −${currency(costs)} gastos${interest ? ` · −${currency(interest)} juros da dívida` : ''}`;
+    toast.textContent = `Mês fechado: +${currency(salary)} salário${promoted ? ' · promoção por estudos!' : ''}${savingsReturn ? ` · +${currency(savingsReturn)} poupança` : ''} · −${currency(costs)} gastos${interest ? ` · −${currency(interest)} juros da dívida` : ''}`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4200);
   }
@@ -481,5 +503,93 @@ document.addEventListener('click', function (event) {
   }
   applySalaryCopy();
   setInterval(applySalaryCopy, 100);
+})();
+</script><script>
+(() => {
+  const state = window.eval('S');
+  const assets = [
+    { icon: '🐷', name: 'Poupança', risk: 'Baixo', monthlyMean: .0055, monthlyDeviation: .0005, monthlyOnly: true },
+    { icon: '🏦', name: 'Renda fixa', risk: 'Baixo', monthlyMean: .008, monthlyDeviation: .003 },
+    { icon: '🏢', name: 'Fundos imobiliários', risk: 'Médio', monthlyMean: .011, monthlyDeviation: .035 },
+    { icon: '📈', name: 'Ações diversificadas', risk: 'Alto', monthlyMean: .014, monthlyDeviation: .07 }
+  ];
+  if (!Array.isArray(state.portfolio)) {
+    state.portfolio = [Math.max(0, Number(state.invested || 0)), 0, 0, 0];
+    state.portfolioDebt = Math.max(0, -Number(state.invested || 0));
+  }
+  while (state.portfolio.length < assets.length) state.portfolio.push(0);
+  state.portfolio = state.portfolio.slice(0, assets.length).map((value) => Math.max(0, Number(value || 0)));
+  state.portfolioDebt = Math.max(0, Number(state.portfolioDebt || 0));
+  const money = (value) => 'R$ ' + Math.round(value).toLocaleString('pt-BR');
+  const portfolioTotal = () => state.portfolio.reduce((sum, value) => sum + value, 0);
+  const syncWealth = () => { state.invested = portfolioTotal() - state.portfolioDebt; };
+  const normal = () => Math.sqrt(-2 * Math.log(Math.max(Math.random(), .000001))) * Math.cos(2 * Math.PI * Math.random());
+  const assetsEl = document.getElementById('assets');
+  const strategyCard = document.getElementById('strategy').closest('.card');
+  strategyCard.style.display = 'none';
+  assetsEl.closest('.card').querySelector('p').textContent = 'Monte seu portfólio e mova recursos quando quiser. Os retornos oscilam; os parâmetros não são exibidos.';
+  function ensureCards() {
+    if (assetsEl.querySelectorAll('[data-portfolio-asset]').length === assets.length) return;
+    assetsEl.innerHTML = assets.map((asset, index) => `<article class="portfolio-asset" data-portfolio-asset="${index}"><div class="investhead"><span><b>${asset.icon} ${asset.name}</b><small data-balance>R$ 0</small></span><span class="tag">${asset.risk}</span></div><small>${asset.monthlyOnly ? 'Atualização no fechamento mensal' : 'Oscilação em tempo real'}</small><div class="portfolio-controls"><input type="number" min="1" step="10" placeholder="Valor" aria-label="Valor para ${asset.name}"><button data-portfolio-action="deposit">Aplicar</button><button data-portfolio-action="withdraw">Retirar</button></div></article>`).join('');
+  }
+  function renderPortfolio() {
+    ensureCards();
+    syncWealth();
+    assetsEl.querySelectorAll('[data-portfolio-asset]').forEach((card, index) => {
+      card.querySelector('[data-balance]').textContent = money(state.portfolio[index]);
+    });
+    document.getElementById('invested').textContent = money(state.invested);
+    document.getElementById('yield').textContent = 'Retorno variável';
+    document.getElementById('variation').textContent = 'Oscilando agora';
+    document.getElementById('rate').textContent = money(portfolioTotal());
+    document.getElementById('cash2').textContent = money(state.cash);
+    const hudLabel = document.querySelector('.wealth-hud article:nth-child(2) span');
+    if (hudLabel) hudLabel.textContent = '📊 Carteira';
+    document.getElementById('hudIncome').textContent = money(portfolioTotal());
+    document.getElementById('passiveTop').textContent = money(portfolioTotal());
+    const meterLabel = document.querySelector('.meterrow > div:nth-child(3) small');
+    if (meterLabel) meterLabel.textContent = 'carteira';
+  }
+  assetsEl.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-portfolio-action]');
+    if (!button) return;
+    const card = button.closest('[data-portfolio-asset]');
+    const index = Number(card.dataset.portfolioAsset);
+    const input = card.querySelector('input');
+    const amount = Math.max(0, Number(input.value || 0));
+    if (!amount) return;
+    if (button.dataset.portfolioAction === 'deposit' && state.cash >= amount) {
+      state.cash -= amount;
+      state.portfolio[index] += amount;
+    }
+    if (button.dataset.portfolioAction === 'withdraw' && state.portfolio[index] >= amount) {
+      state.portfolio[index] -= amount;
+      state.cash += amount;
+    }
+    input.value = '';
+    syncWealth();
+    localStorage.setItem('fire3', JSON.stringify(state));
+    window.eval('draw()');
+    renderPortfolio();
+  });
+  let lastTick = Date.now();
+  setInterval(() => {
+    const seconds = Math.min(3, (Date.now() - lastTick) / 1000);
+    lastTick = Date.now();
+    assets.forEach((asset, index) => {
+      if (asset.monthlyOnly || state.portfolio[index] <= 0) return;
+      const change = asset.monthlyMean * seconds / 60 + normal() * asset.monthlyDeviation * Math.sqrt(seconds / 60);
+      state.portfolio[index] *= Math.max(.01, 1 + change);
+    });
+    syncWealth();
+    localStorage.setItem('fire3', JSON.stringify(state));
+    renderPortfolio();
+  }, 1000);
+  setInterval(renderPortfolio, 100);
+  const style = document.createElement('style');
+  style.textContent = `.portfolio-asset{background:#fffdf5;border-radius:14px;padding:12px;margin:8px 0}.portfolio-controls{display:grid;grid-template-columns:1fr auto auto;gap:7px;margin-top:10px}.portfolio-controls input{min-width:0;border:1px solid #d5cab0;border-radius:8px;padding:7px;background:white;font:700 11px DM Sans}.portfolio-controls button{border:0;border-radius:8px;padding:7px 9px;background:#126c45;color:white;font:800 10px DM Sans}.portfolio-controls button[data-portfolio-action="withdraw"]{background:#536b67}`;
+  document.head.appendChild(style);
+  syncWealth();
+  renderPortfolio();
 })();
 </script></body></html>
