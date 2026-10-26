@@ -101,6 +101,8 @@ document.addEventListener('click', function (event) {
     localStorage.setItem(clockKey, JSON.stringify(clock)); localStorage.setItem('fire3', JSON.stringify(core)); lastCash = core.cash;
     notify(`Mês fechado: +${'R$ ' + Math.round(passive).toLocaleString('pt-BR')} rendimentos · −${'R$ ' + Math.round(costs).toLocaleString('pt-BR')} gastos${interest ? ' · −' + 'R$ ' + Math.round(interest).toLocaleString('pt-BR') + ' juros da dívida' : ''}`);
   }
+  let lastSaved = 0;
+  let monthlyLedgerLastSaved = 0;
   setInterval(() => {
     const now = performance.now(), elapsed = now - lastTime; lastTime = now;
     const expectedContinuousYield = (core.invested > 0 ? monthlyReturn() : 0) / 45 * elapsed / 1000;
@@ -196,5 +198,71 @@ document.addEventListener('click', function (event) {
   };
   new MutationObserver(keepCoverageStable).observe(coverage, { childList: true, characterData: true, subtree: true });
   keepCoverageStable();
+})();
+</script><script>
+(() => {
+  // The original prototype had several independent timers. They made the invested
+  // balance drift between month closings, so replace them with one monthly ledger.
+  for (let timer = 1; timer < 1000; timer += 1) clearInterval(timer);
+
+  const state = window.eval('S');
+  const MONTH_MS = 60000;
+  const DEBT_RATE = 0.15;
+  const monthBar = document.getElementById('monthFill');
+  const monthLabel = document.getElementById('monthLabel');
+  const monthDetail = document.getElementById('monthDetail');
+  let clock;
+  try { clock = JSON.parse(localStorage.getItem('fire-month-clock-v1')) || { started: Date.now(), month: 1 }; }
+  catch { clock = { started: Date.now(), month: 1 }; }
+
+  const totalCosts = () => {
+    try { return (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((sum, [, value]) => sum + Number(value || 0), 0); }
+    catch { return 0; }
+  };
+  const monthlyReturn = () => {
+    const bonus = (state.b || []).reduce((sum, level, index) => sum + level * [.15, .35, .7][index], 0);
+    return (state.a || []).reduce((sum, units, index) => sum + units * ([.5, 1, 1.8, 3][index] + bonus), 0);
+  };
+  const currency = (value) => 'R$ ' + Math.round(value).toLocaleString('pt-BR');
+  const hud = () => {
+    const passive = state.invested > 0 ? monthlyReturn() : 0;
+    const wealth = state.cash + state.invested;
+    document.getElementById('hudWealth').textContent = currency(wealth);
+    document.getElementById('hudIncome').textContent = currency(passive) + '/mês';
+    document.getElementById('hudCosts').textContent = currency(totalCosts()) + '/mês';
+  };
+  let monthlyLedgerLastSaved = 0;
+  function closeMonth() {
+    const costs = totalCosts();
+    const passive = state.invested > 0 ? monthlyReturn() : 0;
+    state.cash += passive;
+    const paidFromCash = Math.min(state.cash, costs);
+    state.cash -= paidFromCash;
+    if (costs > paidFromCash) state.invested -= costs - paidFromCash;
+    let interest = 0;
+    if (state.invested < 0) {
+      interest = Math.abs(state.invested) * DEBT_RATE;
+      state.invested -= interest;
+    }
+    clock.month += 1;
+    clock.started += MONTH_MS;
+    localStorage.setItem('fire3', JSON.stringify(state));
+    localStorage.setItem('fire-month-clock-v1', JSON.stringify(clock));
+    window.eval('draw()');
+    const toast = document.createElement('div');
+    toast.className = 'month-toast';
+    toast.textContent = `Mês fechado: +${currency(passive)} rendimentos · −${currency(costs)} gastos${interest ? ` · −${currency(interest)} juros da dívida` : ''}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4200);
+  }
+  setInterval(() => {
+    while (Date.now() - clock.started >= MONTH_MS) closeMonth();
+    const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
+    monthBar.style.width = `${progress * 100}%`;
+    monthLabel.textContent = `Mês ${clock.month}`;
+    monthDetail.textContent = `Fechamento em ${Math.max(0, Math.ceil((1 - progress) * 60))}s`;
+    hud();
+    if (Date.now() - monthlyLedgerLastSaved >= 1000) { localStorage.setItem('fire3', JSON.stringify(state)); monthlyLedgerLastSaved = Date.now(); }
+  }, 100);
 })();
 </script></body></html>
