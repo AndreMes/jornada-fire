@@ -112,4 +112,31 @@ document.addEventListener('click', function (event) {
     document.getElementById('monthDetail').textContent = 'Fechamento em ' + Math.max(0, Math.ceil((1 - progress) * 60)) + 's';
   }, 100);
 })();
+</script><script>
+(() => {
+  const top = document.querySelector('.top');
+  const hud = document.createElement('div');
+  hud.className = 'wealth-hud';
+  hud.innerHTML = `<article><span>💰 Patrimônio</span><strong id="hudWealth">R$ 0</strong></article><article><span>📈 Renda passiva</span><strong id="hudIncome">R$ 0/mês</strong></article><article><span>🧾 Gastos</span><strong id="hudCosts">R$ 0/mês</strong></article>`;
+  top.appendChild(hud);
+  const visual = document.createElement('style');
+  visual.textContent = `
+    .game{background-image:linear-gradient(90deg,#061e22c9 0%,#07352990 37%,#063a2855 66%,#06291e33 100%),url('assets/fire-journey-hero.png');background-size:cover;background-position:center;background-color:#0b6e4a}
+    .game:after{background:linear-gradient(0deg,#03251e85 0%,transparent 55%);opacity:1}
+    .top{align-items:flex-start;gap:14px}.logo{filter:drop-shadow(0 2px 0 #001f17)}.top>.chip{display:none}.wealth-hud{margin-left:auto;display:flex;gap:6px}.wealth-hud article{min-width:116px;padding:8px 10px;border:2px solid #426477;background:#09263ce8;box-shadow:inset 0 0 0 2px #071624;border-radius:6px;color:#d7f8f3}.wealth-hud span{display:block;font-size:9px;color:#9fddda;white-space:nowrap}.wealth-hud strong{display:block;margin-top:2px;font:700 15px 'Space Grotesk';white-space:nowrap;color:#efff9c}.meter{background:#082633df;border-color:#66a5a1aa}.month-clock{background:#072434bb;border-radius:8px;padding:7px 9px;width:min(690px,88%)}.title{background:#072333a8;border:2px solid #5f9491;border-radius:14px;padding:13px 20px}.title h1{color:#ffcf54}.click{background:radial-gradient(circle at 38% 25%,#64dba2,#15915f 56%,#075037 57%)}
+    @media(max-width:720px){.top{padding:12px}.wealth-hud article{min-width:0;padding:6px}.wealth-hud span{display:none}.wealth-hud strong{font-size:10px}.title{padding:8px 12px}.game{background-position:40% center}}
+  `;
+  document.head.appendChild(visual);
+  const fmt = (value) => 'R$ ' + Math.round(value).toLocaleString('pt-BR');
+  const costs = () => { try { return (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((sum, [, value]) => sum + Number(value || 0), 0); } catch { return 0; } };
+  setInterval(() => {
+    let game = {}; try { game = JSON.parse(localStorage.getItem('fire3')) || {}; } catch {}
+    const invested = Number(game.invested || 0), cash = Number(game.cash || 0), holdings = game.a || [0,0,0,0], boosts = game.b || [0,0,0];
+    const bonus = boosts.reduce((sum, value, index) => sum + value * [.15,.35,.7][index], 0);
+    const income = invested > 0 ? holdings.reduce((sum, count, index) => sum + count * ([.5,1,1.8,3][index] + bonus), 0) : 0;
+    document.getElementById('hudWealth').textContent = fmt(cash + invested);
+    document.getElementById('hudIncome').textContent = fmt(income) + '/mês';
+    document.getElementById('hudCosts').textContent = fmt(costs()) + '/mês';
+  }, 300);
+})();
 </script></body></html>
