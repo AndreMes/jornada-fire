@@ -303,12 +303,18 @@ document.addEventListener('click', function (event) {
       localStorage.setItem('fire3', JSON.stringify(state));
       window.eval('draw()');
     }
-    career.innerHTML = actions.map(([icon, title, detail, reward, cooldown], index) => {
+    if (career.querySelectorAll('[data-active-work]').length !== actions.length) {
+      career.innerHTML = actions.map(([icon, title, detail, reward], index) => `<article class="active-job ready"><button aria-label="${title}: receber ${format(reward)}" title="${title}" data-active-work="${index}"><span class="ico">${icon}</span><span class="active-progress"><i><em></em></i></span><strong>+${format(reward)}</strong></button></article>`).join('');
+    }
+    actions.forEach(([, , , , cooldown], index) => {
       const remaining = Math.max(0, state.activeJobs[index] - now);
       const running = remaining > 0;
-      const progress = running ? Math.max(0, (1 - remaining / cooldown) * 100) : 0;
-      return `<article class="active-job ${running ? 'cooling' : 'ready'}"><button aria-label="${title}: receber ${format(reward)}" title="${title}" data-active-work="${index}" ${running ? 'disabled' : ''}><span class="ico">${icon}</span><span class="active-progress"><i><em style="width:${progress}%"></em></i></span><strong>+${format(reward)}</strong></button></article>`;
-    }).join('');
+      const job = career.children[index];
+      job.classList.toggle('cooling', running);
+      job.classList.toggle('ready', !running);
+      job.querySelector('button').disabled = running;
+      job.querySelector('em').style.width = `${running ? Math.max(0, (1 - remaining / cooldown) * 100) : 0}%`;
+    });
   }
   function perform(index) {
     const now = Date.now();
