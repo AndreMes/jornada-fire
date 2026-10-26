@@ -543,6 +543,7 @@ document.addEventListener('click', function (event) {
     document.getElementById('variation').textContent = 'Oscilando agora';
     document.getElementById('rate').textContent = money(portfolioTotal());
     document.getElementById('cash2').textContent = money(state.cash);
+    document.getElementById('hudWealth').textContent = money(state.cash + state.invested);
     const hudLabel = document.querySelector('.wealth-hud article:nth-child(2) span');
     if (hudLabel) hudLabel.textContent = '📊 Carteira';
     document.getElementById('hudIncome').textContent = money(portfolioTotal());
@@ -568,7 +569,6 @@ document.addEventListener('click', function (event) {
     }
     syncWealth();
     localStorage.setItem('fire3', JSON.stringify(state));
-    window.eval('draw()');
     renderPortfolio();
   });
   let lastTick = Date.now();
