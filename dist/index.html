@@ -382,4 +382,17 @@ document.addEventListener('click', function (event) {
   .active-dock .active-job strong{font-size:13px!important;color:#fff4aa!important;text-shadow:1px 1px #081a20!important}
   .active-dock .active-job.ready .ico{box-shadow:0 0 0 2px #dfff88,0 2px 0 #0005!important}
   @media(max-width:720px){.active-dock{position:relative!important;left:auto!important;bottom:auto!important;width:auto!important;margin:12px!important}.hint{padding-left:0!important}}
+</style><style>
+  .stage{padding-left:0!important;justify-content:center!important}
+  .title{left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;width:min(760px,80%)!important;text-align:center!important}
+  .active-dock{left:50%!important;right:auto!important;top:auto!important;bottom:54px!important;transform:translateX(-50%)!important;width:min(500px,62%)!important;padding:8px 12px!important}
+  .active-dock #career{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;column-gap:18px!important;row-gap:2px!important}
+  .active-dock .active-job{padding:5px 0!important;border-top:0!important}
+  .active-dock .active-job button{grid-template-columns:45px minmax(0,1fr) auto!important;gap:8px!important;min-height:45px!important}
+  .active-dock .active-job .ico{width:45px!important;height:45px!important;font-size:24px!important;border-radius:9px!important}
+  .active-dock .active-progress i{height:10px!important}
+  .active-dock .active-job strong{font-size:11px!important}
+  .hint{position:absolute!important;z-index:4!important;bottom:7px!important;left:0!important;right:0!important;padding:0!important}
+  .hint p{display:none!important}
+  @media(max-width:720px){.title{top:42%!important;width:92%!important}.active-dock{position:absolute!important;bottom:50px!important;width:92%!important}.active-dock #career{grid-template-columns:1fr!important}.hint{font-size:10px!important}}
 </style></body></html>
