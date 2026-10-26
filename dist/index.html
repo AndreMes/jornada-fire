@@ -70,4 +70,46 @@ document.addEventListener('click', function (event) {
   }, true);
   setInterval(renderExpenses, 300); renderExpenses();
 })();
+</script><script>
+(() => {
+  const MONTH_MS = 60000, DEBT_RATE = .15, clockKey = 'fire-month-clock-v1';
+  const core = window.eval('S');
+  let clock; try { clock = JSON.parse(localStorage.getItem(clockKey)) || { started: Date.now(), month: 1 }; } catch { clock = { started: Date.now(), month: 1 }; }
+  const meter = document.querySelector('.meter');
+  const calendar = document.createElement('div');
+  calendar.className = 'month-clock';
+  calendar.innerHTML = '<span id="monthLabel">Mês 1</span><b><i id="monthFill"></i></b><small id="monthDetail">Fechamento em 60s</small>';
+  meter.after(calendar);
+  const style = document.createElement('style');
+  style.textContent = '.month-clock{position:relative;z-index:1;align-self:center;width:min(690px,88%);display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;margin-top:9px;color:#e6faed;font-size:10px}.month-clock b{height:8px;background:#ffffff28;border-radius:8px;overflow:hidden}.month-clock i{display:block;height:100%;width:0;background:#ffc13e;border-radius:8px}.month-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:10;background:#173e2c;color:white;border-radius:12px;padding:11px 16px;font:700 12px DM Sans;box-shadow:0 8px 20px #0004}';
+  document.head.appendChild(style);
+  const totalCosts = () => { try { return (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((sum, [, value]) => sum + Number(value || 0), 0); } catch { return 0; } };
+  const monthlyReturn = () => { const bonus = (core.b || []).reduce((sum, value, index) => sum + value * [.15, .35, .7][index], 0); return (core.a || []).reduce((sum, count, index) => sum + count * ([.5, 1, 1.8, 3][index] + bonus), 0); };
+  let lastTime = performance.now(), lastCash = core.cash;
+  function notify(text) { const n = document.createElement('div'); n.className = 'month-toast'; n.textContent = text; document.body.appendChild(n); setTimeout(() => n.remove(), 4200); }
+  function closeMonth() {
+    const costs = totalCosts();
+    const passive = core.invested > 0 ? monthlyReturn() : 0;
+    core.cash += passive;
+    let remaining = costs;
+    const fromCash = Math.min(core.cash, remaining); core.cash -= fromCash; remaining -= fromCash;
+    if (remaining > 0) core.invested -= remaining;
+    let interest = 0;
+    if (core.invested < 0) { interest = Math.abs(core.invested) * DEBT_RATE; core.invested -= interest; }
+    clock.month += 1; clock.started += MONTH_MS;
+    localStorage.setItem(clockKey, JSON.stringify(clock)); localStorage.setItem('fire3', JSON.stringify(core)); lastCash = core.cash;
+    notify(`Mês fechado: +${'R$ ' + Math.round(passive).toLocaleString('pt-BR')} rendimentos · −${'R$ ' + Math.round(costs).toLocaleString('pt-BR')} gastos${interest ? ' · −' + 'R$ ' + Math.round(interest).toLocaleString('pt-BR') + ' juros da dívida' : ''}`);
+  }
+  setInterval(() => {
+    const now = performance.now(), elapsed = now - lastTime; lastTime = now;
+    const expectedContinuousYield = (core.invested > 0 ? monthlyReturn() : 0) / 45 * elapsed / 1000;
+    const otherCashChanges = core.cash - lastCash - expectedContinuousYield;
+    core.cash = lastCash + otherCashChanges; lastCash = core.cash;
+    while (Date.now() - clock.started >= MONTH_MS) closeMonth();
+    const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
+    document.getElementById('monthFill').style.width = (progress * 100) + '%';
+    document.getElementById('monthLabel').textContent = 'Mês ' + clock.month;
+    document.getElementById('monthDetail').textContent = 'Fechamento em ' + Math.max(0, Math.ceil((1 - progress) * 60)) + 's';
+  }, 100);
+})();
 </script></body></html>
