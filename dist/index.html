@@ -177,7 +177,7 @@ document.addEventListener('click', function (event) {
   reset.onclick = null;
   reset.addEventListener('click', () => {
     const freshState = window.eval('S');
-    Object.assign(freshState, { cash: 0, invested: 0, salary: 1500, studyLevel: 0, businessAttempts: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], activeJobs: [0, 0, 0, 0], drift: 0, last: Date.now() });
+    Object.assign(freshState, { cash: 0, invested: 0, portfolio: [0, 0, 0, 0], portfolioDebt: 0, salary: 1500, studyLevel: 0, businessAttempts: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], activeJobs: [0, 0, 0, 0], drift: 0, last: Date.now() });
     window.onbeforeunload = null;
     ['fire3', 'fire-expenses-v1', 'fire-month-clock-v1'].forEach((key) => localStorage.removeItem(key));
     localStorage.setItem('fire3', JSON.stringify(freshState));
