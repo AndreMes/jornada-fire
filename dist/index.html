@@ -177,7 +177,7 @@ document.addEventListener('click', function (event) {
   reset.onclick = null;
   reset.addEventListener('click', () => {
     const freshState = window.eval('S');
-    Object.assign(freshState, { cash: 0, invested: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], drift: 0, last: Date.now() });
+    Object.assign(freshState, { cash: 0, invested: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], activeJobs: [0, 0, 0, 0], drift: 0, last: Date.now() });
     window.onbeforeunload = null;
     ['fire3', 'fire-expenses-v1', 'fire-month-clock-v1'].forEach((key) => localStorage.removeItem(key));
     localStorage.setItem('fire3', JSON.stringify(freshState));
@@ -260,7 +260,13 @@ document.addEventListener('click', function (event) {
     setTimeout(() => toast.remove(), 4200);
   }
   setInterval(() => {
-    while (Date.now() - clock.started >= MONTH_MS) closeMonth();
+    const elapsed = Date.now() - clock.started;
+    if (elapsed > MONTH_MS * 2) {
+      clock.started = Date.now();
+      localStorage.setItem('fire-month-clock-v1', JSON.stringify(clock));
+    } else if (elapsed >= MONTH_MS) {
+      closeMonth();
+    }
     const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
     monthBar.style.width = `${progress * 100}%`;
     monthLabel.textContent = `Mês ${clock.month}`;
@@ -278,28 +284,38 @@ document.addEventListener('click', function (event) {
     ['🤝', 'Projeto para cliente', 'Reunião, execução e entrega', 110, 8000],
     ['🚀', 'Virada de sprint', 'Feche uma semana de trabalho', 320, 15000]
   ];
-  state.activeCooldowns ||= [0, 0, 0, 0];
+  state.activeJobs ||= [0, 0, 0, 0];
   const career = document.getElementById('career');
   const game = document.querySelector('.game');
   const format = (value) => 'R$ ' + Math.round(value).toLocaleString('pt-BR');
 
   function renderActions() {
     const now = Date.now();
+    let paid = false;
+    actions.forEach(([, , , reward], index) => {
+      if (state.activeJobs[index] && now >= state.activeJobs[index]) {
+        state.activeJobs[index] = 0;
+        state.cash += reward;
+        paid = true;
+      }
+    });
+    if (paid) {
+      localStorage.setItem('fire3', JSON.stringify(state));
+      window.eval('draw()');
+    }
     career.innerHTML = actions.map(([icon, title, detail, reward, cooldown], index) => {
-      const remaining = Math.max(0, state.activeCooldowns[index] - now);
-      const ready = remaining === 0;
-      const progress = ready ? 100 : Math.max(0, (1 - remaining / cooldown) * 100);
-      return `<article class="active-job ${ready ? 'ready' : 'cooling'}"><button aria-label="${title}: receber ${format(reward)}" title="${title}" data-active-work="${index}" ${ready ? '' : 'disabled'}><span class="ico">${icon}</span><span class="active-progress"><i><em style="width:${progress}%"></em></i></span><strong>+${format(reward)}</strong></button></article>`;
+      const remaining = Math.max(0, state.activeJobs[index] - now);
+      const running = remaining > 0;
+      const progress = running ? Math.max(0, (1 - remaining / cooldown) * 100) : 0;
+      return `<article class="active-job ${running ? 'cooling' : 'ready'}"><button aria-label="${title}: receber ${format(reward)}" title="${title}" data-active-work="${index}" ${running ? 'disabled' : ''}><span class="ico">${icon}</span><span class="active-progress"><i><em style="width:${progress}%"></em></i></span><strong>+${format(reward)}</strong></button></article>`;
     }).join('');
   }
   function perform(index) {
     const now = Date.now();
     const action = actions[index];
-    if (!action || now < state.activeCooldowns[index]) return;
-    state.cash += action[3];
-    state.activeCooldowns[index] = now + action[4];
+    if (!action || now < state.activeJobs[index]) return;
+    state.activeJobs[index] = now + action[4];
     localStorage.setItem('fire3', JSON.stringify(state));
-    window.eval('draw()');
     renderActions();
   }
   career.addEventListener('click', (event) => {
@@ -350,4 +366,14 @@ document.addEventListener('click', function (event) {
   .active-dock .active-progress i{display:block!important;height:9px!important;background:#173b48!important;border:1px solid #57909a!important;border-radius:8px!important;overflow:hidden!important}
   .active-dock .active-progress em{display:block!important;height:100%!important;background:linear-gradient(90deg,#21a95e,#b5e65d)!important;border-radius:inherit!important}
   .active-dock .active-job strong{font:800 10px 'DM Sans'!important;white-space:nowrap!important;color:#fff0a4!important}
+</style><style>
+  .active-dock{left:26px!important;top:auto!important;bottom:88px!important;width:405px!important;padding:10px 12px!important;background:linear-gradient(90deg,#062432e8,#0624329c)!important;border-color:#426477aa!important}
+  .active-dock .active-job{padding:7px 0!important}
+  .active-dock .active-job button{grid-template-columns:56px minmax(0,1fr) auto!important;gap:11px!important;min-height:56px!important;cursor:pointer!important}
+  .active-dock .active-job button:disabled{cursor:default!important;opacity:1!important}
+  .active-dock .active-job .ico{width:56px!important;height:56px!important;border-radius:11px!important;font-size:29px!important;box-shadow:0 2px 0 #0005!important}
+  .active-dock .active-progress i{height:13px!important;border-radius:10px!important;border:2px solid #70a0a6!important;background:#102d38!important}
+  .active-dock .active-job strong{font-size:13px!important;color:#fff4aa!important;text-shadow:1px 1px #081a20!important}
+  .active-dock .active-job.ready .ico{box-shadow:0 0 0 2px #dfff88,0 2px 0 #0005!important}
+  @media(max-width:720px){.active-dock{position:relative!important;left:auto!important;bottom:auto!important;width:auto!important;margin:12px!important}.hint{padding-left:0!important}}
 </style></body></html>
