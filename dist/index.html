@@ -254,7 +254,7 @@ document.addEventListener('click', function (event) {
     let savingsReturn = 0;
     if (Array.isArray(state.portfolio)) {
       if (state.portfolio[0] > 0) {
-        const savingsRate = .0055 + (Math.random() - .5) * .001;
+        const savingsRate = .005;
         savingsReturn = state.portfolio[0] * savingsRate;
         state.portfolio[0] += savingsReturn;
       }
@@ -508,10 +508,10 @@ document.addEventListener('click', function (event) {
 (() => {
   const state = window.eval('S');
   const assets = [
-    { icon: '🐷', name: 'Poupança', risk: 'Baixo', monthlyMean: .0055, monthlyDeviation: .0005, monthlyOnly: true },
-    { icon: '🏦', name: 'Renda fixa', risk: 'Baixo', monthlyMean: .008, monthlyDeviation: .003 },
-    { icon: '🏢', name: 'Fundos imobiliários', risk: 'Médio', monthlyMean: .011, monthlyDeviation: .035 },
-    { icon: '📈', name: 'Ações diversificadas', risk: 'Alto', monthlyMean: .014, monthlyDeviation: .07 }
+    { icon: '🐷', name: 'Poupança', risk: 'Baixo', monthlyMean: .005, monthlyDeviation: 0, monthlyOnly: true },
+    { icon: '🏦', name: 'Renda fixa', risk: 'Baixo', monthlyMean: .008, monthlyDeviation: 0 },
+    { icon: '🏢', name: 'Fundos imobiliários', risk: 'Médio', monthlyMean: .01, monthlyDeviation: .05 },
+    { icon: '📈', name: 'Ações diversificadas', risk: 'Alto', monthlyMean: .015, monthlyDeviation: .10 }
   ];
   if (!Array.isArray(state.portfolio)) {
     state.portfolio = [Math.max(0, Number(state.invested || 0)), 0, 0, 0];
