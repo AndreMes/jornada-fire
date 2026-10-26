@@ -241,7 +241,7 @@ document.addEventListener('click', function (event) {
     const costs = totalCosts();
     state.salary = Number(state.salary || 1500);
     let promoted = false;
-    const studyTarget = 30000 - (30000 - 1500) * Math.exp(-Number(state.studyLevel || 0) / 12);
+    const studyTarget = 30000 - (30000 - 1500) * Math.exp(-Number(state.studyLevel || 0) / 24);
     if (state.studyLevel > 0 && Math.random() < 0.10 && studyTarget > state.salary) {
       state.salary = Math.round(studyTarget);
       promoted = true;
