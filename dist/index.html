@@ -242,7 +242,7 @@ document.addEventListener('click', function (event) {
     state.salary = Number(state.salary || 1500);
     let promoted = false;
     const studyTarget = 30000 - (30000 - 1500) * Math.exp(-Number(state.studyLevel || 0) / 24);
-    if (state.studyLevel > 0 && Math.random() < 0.10 && studyTarget > state.salary) {
+    if (state.studyLevel > 0 && Math.random() < 0.20 && studyTarget > state.salary) {
       state.salary = Math.round(studyTarget);
       promoted = true;
     }
@@ -520,6 +520,9 @@ document.addEventListener('click', function (event) {
   while (state.portfolio.length < assets.length) state.portfolio.push(0);
   state.portfolio = state.portfolio.slice(0, assets.length).map((value) => Math.max(0, Number(value || 0)));
   state.portfolioDebt = Math.max(0, Number(state.portfolioDebt || 0));
+  if (Number(state.invested || 0) < 0 && state.portfolioDebt === 0) {
+    state.portfolioDebt = state.portfolio.reduce((sum, value) => sum + value, 0) + Math.abs(Number(state.invested));
+  }
   const money = (value) => 'R$ ' + Math.round(value).toLocaleString('pt-BR');
   const portfolioTotal = () => state.portfolio.reduce((sum, value) => sum + value, 0);
   const syncWealth = () => { state.invested = portfolioTotal() - state.portfolioDebt; };
@@ -534,7 +537,7 @@ document.addEventListener('click', function (event) {
     const assetCards = assets.map((asset, index) => `<article class="portfolio-asset" data-portfolio-asset="${index}"><div class="investhead"><span><b>${asset.icon} ${asset.name}</b><small data-balance>R$ 0</small></span><span class="tag">${asset.risk}</span></div><small>${asset.monthlyOnly ? 'Atualização no fechamento mensal' : 'Oscilação em tempo real'}</small><div class="portfolio-controls"><div class="portfolio-percentages"><button data-portfolio-percent="10">10%</button><button data-portfolio-percent="25">25%</button><button data-portfolio-percent="50">50%</button><button data-portfolio-percent="100">100%</button></div><button data-portfolio-action="withdraw">Resgatar tudo</button></div></article>`).join('');
     const debtCard = hasDebt ? `<article class="portfolio-asset debt-asset" data-debt-asset><div class="investhead"><span><b>💳 Dívidas</b><small data-debt-balance>R$ 0</small></span><span class="tag">Extremo</span></div><small>Juros do cartão: −15% ao mês · sem oscilação</small><div class="portfolio-controls"><div class="portfolio-percentages"><button data-debt-percent="10">10%</button><button data-debt-percent="25">25%</button><button data-debt-percent="50">50%</button><button data-debt-percent="100">100%</button></div><button data-debt-action="pay-all">Quitar tudo</button></div></article>` : '';
     assetsEl.dataset.debtVisible = String(hasDebt);
-    assetsEl.innerHTML = assetCards + debtCard;
+    assetsEl.innerHTML = debtCard + assetCards;
   }
   function renderPortfolio() {
     ensureCards();
@@ -612,5 +615,5 @@ document.addEventListener('click', function (event) {
   /* HUD and portfolio summary intentionally keep only the information that drives decisions. */
   .wealth-hud article:nth-child(2),
   .hint,
-  #invest .wallet .split:first-of-type { display:none; }
+  #invest .wallet > .split:nth-of-type(2) { display:none; }
 </style></body></html>
