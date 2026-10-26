@@ -139,4 +139,31 @@ document.addEventListener('click', function (event) {
     document.getElementById('hudCosts').textContent = fmt(costs()) + '/mês';
   }, 300);
 })();
+</script><script>
+(() => {
+  const game = document.querySelector('.game'), meter = document.querySelector('.meter');
+  const monthClock = document.querySelector('.month-clock');
+  if (monthClock && meter) meter.appendChild(monthClock);
+  const work = document.getElementById('work');
+  const earn = work.onclick; work.onclick = null;
+  game.addEventListener('click', (event) => {
+    if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock')) return;
+    earn();
+  });
+  const style = document.createElement('style');
+  style.textContent = `
+    .meter>.bar{display:none}.month-clock{width:100%!important;margin:12px 0 0!important;padding:0!important;background:transparent!important;grid-template-columns:auto 1fr auto!important;font-size:11px!important}.month-clock b{height:13px!important;border:1px solid #ffffff55;background:#0a1f2ddd!important}.month-clock i{background:linear-gradient(90deg,#ffbe3e,#ffdc68)!important}.click{inset:0!important;width:100%!important;height:100%!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;z-index:0}.click .person{display:none}.stage{cursor:pointer}.title{z-index:1;pointer-events:none;background:#062333a0!important}.hint{pointer-events:none}.game:after{pointer-events:none}.month-clock small{white-space:nowrap}.month-clock #monthLabel{white-space:nowrap}
+  `;
+  document.head.appendChild(style);
+  const money = (n) => 'R$ ' + Math.round(n).toLocaleString('pt-BR');
+  function updateGoalCopy() {
+    let costs = 0, state = {}; try { costs = (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((s,[,v]) => s + Number(v || 0),0); state = JSON.parse(localStorage.getItem('fire3')) || {}; } catch {}
+    const boosts = state.b || [0,0,0], holdings = state.a || [0,0,0,0], bonus = boosts.reduce((s,v,i) => s + v * [.15,.35,.7][i],0);
+    const income = Number(state.invested || 0) > 0 ? holdings.reduce((s,v,i) => s + v * ([.5,1,1.8,3][i] + bonus),0) : 0;
+    const pct = costs ? Math.floor(Math.max(0, income / costs * 100)) : 100;
+    const text = document.getElementById('coverage'); if (text) text.textContent = `Sua renda passiva cobre ${pct}% do seu custo de vida de ${money(costs)}/mês.`;
+    const map = document.getElementById('mapbar'); if (map) map.style.width = Math.min(100,pct) + '%';
+  }
+  setInterval(updateGoalCopy, 80); updateGoalCopy();
+})();
 </script></body></html>
