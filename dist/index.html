@@ -530,7 +530,7 @@ document.addEventListener('click', function (event) {
   assetsEl.closest('.card').querySelector('p').textContent = 'Monte seu portfólio e mova recursos quando quiser. Os retornos oscilam; os parâmetros não são exibidos.';
   function ensureCards() {
     if (assetsEl.querySelectorAll('[data-portfolio-asset]').length === assets.length) return;
-    assetsEl.innerHTML = assets.map((asset, index) => `<article class="portfolio-asset" data-portfolio-asset="${index}"><div class="investhead"><span><b>${asset.icon} ${asset.name}</b><small data-balance>R$ 0</small></span><span class="tag">${asset.risk}</span></div><small>${asset.monthlyOnly ? 'Atualização no fechamento mensal' : 'Oscilação em tempo real'}</small><div class="portfolio-controls"><input type="number" min="1" step="10" placeholder="Valor" aria-label="Valor para ${asset.name}"><button data-portfolio-action="deposit">Aplicar</button><button data-portfolio-action="withdraw">Retirar</button></div></article>`).join('');
+    assetsEl.innerHTML = assets.map((asset, index) => `<article class="portfolio-asset" data-portfolio-asset="${index}"><div class="investhead"><span><b>${asset.icon} ${asset.name}</b><small data-balance>R$ 0</small></span><span class="tag">${asset.risk}</span></div><small>${asset.monthlyOnly ? 'Atualização no fechamento mensal' : 'Oscilação em tempo real'}</small><div class="portfolio-controls"><div class="portfolio-percentages"><button data-portfolio-percent="10">10%</button><button data-portfolio-percent="25">25%</button><button data-portfolio-percent="50">50%</button><button data-portfolio-percent="100">100%</button></div><button data-portfolio-action="withdraw">Resgatar tudo</button></div></article>`).join('');
   }
   function renderPortfolio() {
     ensureCards();
@@ -551,22 +551,21 @@ document.addEventListener('click', function (event) {
     if (meterLabel) meterLabel.textContent = 'carteira';
   }
   assetsEl.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-portfolio-action]');
+    const button = event.target.closest('[data-portfolio-action],[data-portfolio-percent]');
     if (!button) return;
     const card = button.closest('[data-portfolio-asset]');
     const index = Number(card.dataset.portfolioAsset);
-    const input = card.querySelector('input');
-    const amount = Math.max(0, Number(input.value || 0));
+    const percent = Number(button.dataset.portfolioPercent || 0);
+    const amount = percent ? state.cash * percent / 100 : state.portfolio[index];
     if (!amount) return;
-    if (button.dataset.portfolioAction === 'deposit' && state.cash >= amount) {
+    if (percent && state.cash >= amount) {
       state.cash -= amount;
       state.portfolio[index] += amount;
     }
-    if (button.dataset.portfolioAction === 'withdraw' && state.portfolio[index] >= amount) {
+    if (button.dataset.portfolioAction === 'withdraw') {
       state.portfolio[index] -= amount;
       state.cash += amount;
     }
-    input.value = '';
     syncWealth();
     localStorage.setItem('fire3', JSON.stringify(state));
     window.eval('draw()');
@@ -587,7 +586,7 @@ document.addEventListener('click', function (event) {
   }, 1000);
   setInterval(renderPortfolio, 100);
   const style = document.createElement('style');
-  style.textContent = `.portfolio-asset{background:#fffdf5;border-radius:14px;padding:12px;margin:8px 0}.portfolio-controls{display:grid;grid-template-columns:1fr auto auto;gap:7px;margin-top:10px}.portfolio-controls input{min-width:0;border:1px solid #d5cab0;border-radius:8px;padding:7px;background:white;font:700 11px DM Sans}.portfolio-controls button{border:0;border-radius:8px;padding:7px 9px;background:#126c45;color:white;font:800 10px DM Sans}.portfolio-controls button[data-portfolio-action="withdraw"]{background:#536b67}`;
+  style.textContent = `.portfolio-asset{background:#fffdf5;border-radius:14px;padding:12px;margin:8px 0}.portfolio-controls{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:10px}.portfolio-percentages{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex:1}.portfolio-controls button{border:0;border-radius:8px;padding:7px 9px;background:#126c45;color:white;font:800 10px DM Sans}.portfolio-controls button[data-portfolio-action="withdraw"]{background:#536b67;white-space:nowrap}`;
   document.head.appendChild(style);
   syncWealth();
   renderPortfolio();
