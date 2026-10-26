@@ -311,9 +311,9 @@ document.addEventListener('click', function (event) {
   const state = window.eval('S');
   const actions = [
     ['💼', 'Emprego fixo', 'Salário creditado no fechamento do mês', 1500, 60000],
-    ['📚', 'Estudo', 'Conclua para elevar seu nível de estudo', 0, 90000, 'study'],
+    ['📚', 'Estudo', 'Conclua para elevar seu nível de estudo', 0, 60000, 'study'],
     ['💻', 'Freelance', 'Faça uma entrega para um cliente', 200, 8000],
-    ['🚀', 'Próprio negócio', 'Resultado incerto: aprenda a escalar', 0, 15000, 'business']
+    ['🚀', 'Próprio negócio', 'Resultado incerto: aprenda a escalar', 0, 120000, 'business']
   ];
   state.activeJobs ||= [0, 0, 0, 0];
   state.studyLevel = Number(state.studyLevel || 0);
