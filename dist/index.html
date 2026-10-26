@@ -289,7 +289,7 @@ document.addEventListener('click', function (event) {
       const remaining = Math.max(0, state.activeCooldowns[index] - now);
       const ready = remaining === 0;
       const progress = ready ? 100 : Math.max(0, (1 - remaining / cooldown) * 100);
-      return `<article class="active-job ${ready ? 'ready' : 'cooling'}"><span class="ico">${icon}</span><span class="active-copy"><b>${title}</b><small>${detail} · +${format(reward)}</small><i><em style="width:${progress}%"></em></i></span><button data-active-work="${index}" ${ready ? '' : 'disabled'}>${ready ? 'Trabalhar' : `${Math.ceil(remaining / 1000)}s`}</button></article>`;
+      return `<article class="active-job ${ready ? 'ready' : 'cooling'}"><button aria-label="${title}: receber ${format(reward)}" title="${title}" data-active-work="${index}" ${ready ? '' : 'disabled'}><span class="ico">${icon}</span><span class="active-progress"><i><em style="width:${progress}%"></em></i></span><strong>+${format(reward)}</strong></button></article>`;
     }).join('');
   }
   function perform(index) {
@@ -328,7 +328,6 @@ document.addEventListener('click', function (event) {
   const investPane = document.getElementById('invest');
   const dock = document.createElement('section');
   dock.className = 'active-dock';
-  dock.innerHTML = '<b>TRABALHO ATIVO</b><small>Ações grátis · cada uma recarrega</small>';
   dock.appendChild(career);
   game.appendChild(dock);
   evolveTab.remove();
@@ -342,4 +341,13 @@ document.addEventListener('click', function (event) {
   `;
   document.head.appendChild(style);
 })();
-</script></body></html>
+</script><style>
+  .active-dock{width:228px!important;padding:8px!important}
+  .active-dock .active-job{display:block!important;padding:6px 0!important}
+  .active-dock .active-job button{display:grid!important;grid-template-columns:31px minmax(0,1fr) auto!important;align-items:center!important;gap:8px!important;width:100%!important;min-width:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#efff9c!important;text-align:left!important}
+  .active-dock .active-job button:disabled{background:transparent!important;color:#d1d9d4!important;opacity:.78!important;cursor:wait!important}
+  .active-dock .active-job .ico{width:30px!important;height:30px!important;display:grid!important;place-items:center!important;background:#e3f1df!important;border-radius:7px!important;font-size:16px!important}
+  .active-dock .active-progress i{display:block!important;height:9px!important;background:#173b48!important;border:1px solid #57909a!important;border-radius:8px!important;overflow:hidden!important}
+  .active-dock .active-progress em{display:block!important;height:100%!important;background:linear-gradient(90deg,#21a95e,#b5e65d)!important;border-radius:inherit!important}
+  .active-dock .active-job strong{font:800 10px 'DM Sans'!important;white-space:nowrap!important;color:#fff0a4!important}
+</style></body></html>
