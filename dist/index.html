@@ -167,4 +167,34 @@ document.addEventListener('click', function (event) {
   }
   setInterval(updateGoalCopy, 80); updateGoalCopy();
 })();
-</script><script>document.querySelector('.hint b').textContent='Clique na cena para trabalhar';</script></body></html>
+</script><script>
+(() => {
+  document.querySelector('.hint b').textContent = 'Clique na cena para trabalhar';
+
+  const reset = document.getElementById('reset');
+  reset.onclick = null;
+  reset.addEventListener('click', () => {
+    ['fire3', 'fire-expenses-v1', 'fire-month-clock-v1'].forEach((key) => localStorage.removeItem(key));
+    location.reload();
+  });
+
+  const coverage = document.getElementById('coverage');
+  const coverageCopy = () => {
+    const state = JSON.parse(localStorage.getItem('fire3') || '{}');
+    const expenses = JSON.parse(localStorage.getItem('fire-expenses-v1') || '[]');
+    const costs = expenses.reduce((sum, [, value]) => sum + Number(value || 0), 0);
+    const bonus = (state.b || [0, 0, 0]).reduce((sum, value, index) => sum + value * [.15, .35, .7][index], 0);
+    const income = Number(state.invested || 0) > 0
+      ? (state.a || [0, 0, 0, 0]).reduce((sum, value, index) => sum + value * ([.5, 1, 1.8, 3][index] + bonus), 0)
+      : 0;
+    const percent = costs ? Math.floor(Math.max(0, income / costs * 100)) : 0;
+    return `Sua renda passiva cobre ${percent}% do seu custo de vida de R$ ${Math.round(costs).toLocaleString('pt-BR')}/mês.`;
+  };
+  const keepCoverageStable = () => {
+    const expected = coverageCopy();
+    if (coverage.textContent !== expected) coverage.textContent = expected;
+  };
+  new MutationObserver(keepCoverageStable).observe(coverage, { childList: true, characterData: true, subtree: true });
+  keepCoverageStable();
+})();
+</script></body></html>
