@@ -395,4 +395,24 @@ document.addEventListener('click', function (event) {
   .hint{position:absolute!important;z-index:4!important;bottom:7px!important;left:0!important;right:0!important;padding:0!important}
   .hint p{display:none!important}
   @media(max-width:720px){.title{top:42%!important;width:92%!important}.active-dock{position:absolute!important;bottom:50px!important;width:92%!important}.active-dock #career{grid-template-columns:1fr!important}.hint{font-size:10px!important}}
-</style><style>.title{top:32px!important;transform:translateX(-50%)!important}@media(max-width:720px){.title{top:18px!important}}</style></body></html>
+</style><style>.title{top:32px!important;transform:translateX(-50%)!important}@media(max-width:720px){.title{top:18px!important}}</style><script>
+(() => {
+  const title = document.querySelector('.title');
+  const stage = document.querySelector('.stage');
+  const meter = document.querySelector('.meter');
+  const dock = document.querySelector('.active-dock');
+  function centerTitleVertically() {
+    if (innerWidth <= 720) return;
+    const stageBox = stage.getBoundingClientRect();
+    const meterBox = meter.getBoundingClientRect();
+    const dockBox = dock.getBoundingClientRect();
+    const freeTop = meterBox.bottom - stageBox.top + 16;
+    const freeBottom = dockBox.top - stageBox.top - 16;
+    const top = freeTop + Math.max(0, (freeBottom - freeTop - title.offsetHeight) / 2);
+    title.style.top = `${top}px`;
+    title.style.transform = 'translateX(-50%)';
+  }
+  requestAnimationFrame(centerTitleVertically);
+  addEventListener('resize', centerTitleVertically);
+})();
+</script></body></html>
