@@ -176,8 +176,11 @@ document.addEventListener('click', function (event) {
   const reset = document.getElementById('reset');
   reset.onclick = null;
   reset.addEventListener('click', () => {
+    const freshState = window.eval('S');
+    Object.assign(freshState, { cash: 0, invested: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], drift: 0, last: Date.now() });
     window.onbeforeunload = null;
     ['fire3', 'fire-expenses-v1', 'fire-month-clock-v1'].forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem('fire3', JSON.stringify(freshState));
     location.reload();
   });
 
