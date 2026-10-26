@@ -238,8 +238,9 @@ document.addEventListener('click', function (event) {
   let monthlyLedgerLastSaved = 0;
   function closeMonth() {
     const costs = totalCosts();
+    const salary = 1500;
     const passive = state.invested > 0 ? monthlyReturn() : 0;
-    state.cash += passive;
+    state.cash += salary + passive;
     const paidFromCash = Math.min(state.cash, costs);
     state.cash -= paidFromCash;
     if (costs > paidFromCash) state.invested -= costs - paidFromCash;
@@ -255,7 +256,7 @@ document.addEventListener('click', function (event) {
     window.eval('draw()');
     const toast = document.createElement('div');
     toast.className = 'month-toast';
-    toast.textContent = `Mês fechado: +${currency(passive)} rendimentos · −${currency(costs)} gastos${interest ? ` · −${currency(interest)} juros da dívida` : ''}`;
+    toast.textContent = `Mês fechado: +${currency(salary)} salário · +${currency(passive)} rendimentos · −${currency(costs)} gastos${interest ? ` · −${currency(interest)} juros da dívida` : ''}`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4200);
   }
@@ -279,7 +280,7 @@ document.addEventListener('click', function (event) {
 (() => {
   const state = window.eval('S');
   const actions = [
-    ['☕', 'Turno no escritório', 'Resolva as tarefas do dia', 10, 1000],
+    ['💼', 'Emprego fixo', 'Salário creditado no fechamento do mês', 1500, 60000],
     ['💻', 'Freela rápido', 'Faça uma entrega expressa', 35, 3500],
     ['🤝', 'Projeto para cliente', 'Reunião, execução e entrega', 110, 8000],
     ['🚀', 'Virada de sprint', 'Feche uma semana de trabalho', 320, 15000]
@@ -293,7 +294,7 @@ document.addEventListener('click', function (event) {
     const now = Date.now();
     let paid = false;
     actions.forEach(([, , , reward], index) => {
-      if (state.activeJobs[index] && now >= state.activeJobs[index]) {
+      if (index > 0 && state.activeJobs[index] && now >= state.activeJobs[index]) {
         state.activeJobs[index] = 0;
         state.cash += reward;
         paid = true;
@@ -307,19 +308,27 @@ document.addEventListener('click', function (event) {
       career.innerHTML = actions.map(([icon, title, detail, reward], index) => `<article class="active-job ready"><button aria-label="${title}: receber ${format(reward)}" title="${title}" data-active-work="${index}"><span class="ico">${icon}</span><span class="active-progress"><i><em></em></i></span><strong>+${format(reward)}</strong></button></article>`).join('');
     }
     actions.forEach(([, , , , cooldown], index) => {
-      const remaining = Math.max(0, state.activeJobs[index] - now);
-      const running = remaining > 0;
+      const fixedJob = index === 0;
+      let remaining = Math.max(0, state.activeJobs[index] - now);
+      let running = remaining > 0;
+      let progress = running ? Math.max(0, (1 - remaining / cooldown) * 100) : 0;
+      if (fixedJob) {
+        let month = {}; try { month = JSON.parse(localStorage.getItem('fire-month-clock-v1')) || {}; } catch {}
+        progress = month.started ? Math.max(0, Math.min(100, (now - month.started) / 60000 * 100)) : 0;
+        running = true;
+      }
       const job = career.children[index];
-      job.classList.toggle('cooling', running);
-      job.classList.toggle('ready', !running);
+      job.classList.toggle('fixed-job', fixedJob);
+      job.classList.toggle('cooling', running && !fixedJob);
+      job.classList.toggle('ready', !running && !fixedJob);
       job.querySelector('button').disabled = running;
-      job.querySelector('em').style.width = `${running ? Math.max(0, (1 - remaining / cooldown) * 100) : 0}%`;
+      job.querySelector('em').style.width = `${progress}%`;
     });
   }
   function perform(index) {
     const now = Date.now();
     const action = actions[index];
-    if (!action || now < state.activeJobs[index]) return;
+    if (!action || index === 0 || now < state.activeJobs[index]) return;
     state.activeJobs[index] = now + action[4];
     localStorage.setItem('fire3', JSON.stringify(state));
     renderActions();
@@ -331,7 +340,7 @@ document.addEventListener('click', function (event) {
   game.addEventListener('click', (event) => {
     if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock') || event.target.closest('.active-dock')) return;
     event.stopImmediatePropagation();
-    perform(0);
+    perform(1);
   }, true);
   document.querySelector('.hint b').textContent = 'Use as ações de trabalho — cada uma tem seu próprio cooldown.';
   const style = document.createElement('style');
@@ -431,5 +440,13 @@ document.addEventListener('click', function (event) {
   }
   applyFixedCostCopy();
   setInterval(applyFixedCostCopy, 100);
+  function applySalaryCopy() {
+    const income = document.getElementById('income');
+    if (income) income.textContent = 'R$ 1.500';
+    const incomeLabel = document.querySelector('.meterrow > div:first-child small');
+    if (incomeLabel) incomeLabel.textContent = 'salário fixo/mês';
+  }
+  applySalaryCopy();
+  setInterval(applySalaryCopy, 100);
 })();
 </script></body></html>
