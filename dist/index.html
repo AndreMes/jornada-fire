@@ -73,13 +73,13 @@ document.addEventListener('click', function (event) {
 })();
 </script><script>
 (() => {
-  const MONTH_MS = 30000, DEBT_RATE = .15, clockKey = 'fire-month-clock-v1';
+  const MONTH_MS = 15000, DEBT_RATE = .15, clockKey = 'fire-month-clock-v1';
   const core = window.eval('S');
   let clock; try { clock = JSON.parse(localStorage.getItem(clockKey)) || { started: Date.now(), month: 1 }; } catch { clock = { started: Date.now(), month: 1 }; }
   const meter = document.querySelector('.meter');
   const calendar = document.createElement('div');
   calendar.className = 'month-clock';
-  calendar.innerHTML = '<span id="monthLabel">Mês 1</span><b><i id="monthFill"></i></b><small id="monthDetail">Fechamento em 30s</small>';
+  calendar.innerHTML = '<span id="monthLabel">Mês 1</span><b><i id="monthFill"></i></b><small id="monthDetail">Fechamento em 15s</small>';
   meter.after(calendar);
   const style = document.createElement('style');
   style.textContent = '.month-clock{position:relative;z-index:1;align-self:center;width:min(690px,88%);display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;margin-top:9px;color:#e6faed;font-size:10px}.month-clock b{height:8px;background:#ffffff28;border-radius:8px;overflow:hidden}.month-clock i{display:block;height:100%;width:0;background:#ffc13e;border-radius:8px}.month-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:10;background:#173e2c;color:white;border-radius:12px;padding:11px 16px;font:700 12px DM Sans;box-shadow:0 8px 20px #0004}';
@@ -112,7 +112,7 @@ document.addEventListener('click', function (event) {
     const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
     document.getElementById('monthFill').style.width = (progress * 100) + '%';
     document.getElementById('monthLabel').textContent = 'Mês ' + clock.month;
-    document.getElementById('monthDetail').textContent = 'Fechamento em ' + Math.max(0, Math.ceil((1 - progress) * 30)) + 's';
+    document.getElementById('monthDetail').textContent = 'Fechamento em ' + Math.max(0, Math.ceil((1 - progress) * 15)) + 's';
   }, 100);
 })();
 </script><script>
@@ -210,7 +210,7 @@ document.addEventListener('click', function (event) {
   for (let timer = 1; timer < 1000; timer += 1) clearInterval(timer);
 
   const state = window.eval('S');
-  const MONTH_MS = 30000;
+  const MONTH_MS = 15000;
   const DEBT_RATE = 0.15;
   const monthBar = document.getElementById('monthFill');
   const monthLabel = document.getElementById('monthLabel');
@@ -301,7 +301,7 @@ document.addEventListener('click', function (event) {
     const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
     monthBar.style.width = `${progress * 100}%`;
     monthLabel.textContent = `Mês ${clock.month}`;
-    monthDetail.textContent = `Fechamento em ${Math.max(0, Math.ceil((1 - progress) * 30))}s`;
+    monthDetail.textContent = `Fechamento em ${Math.max(0, Math.ceil((1 - progress) * 15))}s`;
     hud();
     if (Date.now() - monthlyLedgerLastSaved >= 1000) { localStorage.setItem('fire3', JSON.stringify(state)); monthlyLedgerLastSaved = Date.now(); }
   }, 100);
@@ -310,10 +310,10 @@ document.addEventListener('click', function (event) {
 (() => {
   const state = window.eval('S');
   const actions = [
-    ['💼', 'Emprego fixo', 'Salário creditado no fechamento do mês', 1500, 30000],
-    ['📚', 'Estudo', 'Conclua para elevar seu nível de estudo', 0, 30000, 'study'],
-    ['💻', 'Freelance', 'Faça uma entrega para um cliente', 200, 4000],
-    ['🚀', 'Próprio negócio', 'Resultado incerto: aprenda a escalar', 0, 60000, 'business']
+    ['💼', 'Emprego fixo', 'Salário creditado no fechamento do mês', 1500, 15000],
+    ['📚', 'Estudo', 'Conclua para elevar seu nível de estudo', 0, 15000, 'study'],
+    ['💻', 'Freelance', 'Faça uma entrega para um cliente', 200, 2000],
+    ['🚀', 'Próprio negócio', 'Resultado incerto: aprenda a escalar', 0, 30000, 'business']
   ];
   state.activeJobs ||= [0, 0, 0, 0];
   state.studyLevel = Number(state.studyLevel || 0);
@@ -367,7 +367,7 @@ document.addEventListener('click', function (event) {
       let progress = running ? Math.max(0, (1 - remaining / cooldown) * 100) : 0;
       if (fixedJob) {
         let month = {}; try { month = JSON.parse(localStorage.getItem('fire-month-clock-v1')) || {}; } catch {}
-        progress = month.started ? Math.max(0, Math.min(100, (now - month.started) / 30000 * 100)) : 0;
+        progress = month.started ? Math.max(0, Math.min(100, (now - month.started) / 15000 * 100)) : 0;
         running = true;
       }
       const job = career.children[index];
@@ -510,8 +510,8 @@ document.addEventListener('click', function (event) {
   const assets = [
     { icon: '🐷', name: 'Poupança', risk: 'Baixo', monthlyMean: .005, monthlyDeviation: 0, monthlyOnly: true },
     { icon: '🏦', name: 'Renda fixa', risk: 'Baixo', monthlyMean: .008, monthlyDeviation: 0 },
-    { icon: '🏢', name: 'Fundos imobiliários', risk: 'Médio', monthlyMean: .01, monthlyDeviation: .05 },
-    { icon: '📈', name: 'Ações diversificadas', risk: 'Alto', monthlyMean: .015, monthlyDeviation: .10 }
+    { icon: '🏢', name: 'Fundos imobiliários', risk: 'Médio', monthlyMean: .01, monthlyDeviation: .025 },
+    { icon: '📈', name: 'Ações diversificadas', risk: 'Alto', monthlyMean: .015, monthlyDeviation: .05 }
   ];
   if (!Array.isArray(state.portfolio)) {
     state.portfolio = [Math.max(0, Number(state.invested || 0)), 0, 0, 0];
@@ -597,7 +597,7 @@ document.addEventListener('click', function (event) {
     lastTick = Date.now();
     assets.forEach((asset, index) => {
       if (asset.monthlyOnly || state.portfolio[index] <= 0) return;
-      const change = asset.monthlyMean * seconds / 60 + normal() * asset.monthlyDeviation * Math.sqrt(seconds / 60);
+      const change = asset.monthlyMean * seconds / 15 + normal() * asset.monthlyDeviation * Math.sqrt(seconds / 15);
       state.portfolio[index] *= Math.max(.01, 1 + change);
     });
     syncWealth();
