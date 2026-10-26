@@ -25,6 +25,7 @@ document.addEventListener('click', function (event) {
   ];
   let expenses;
   try { expenses = JSON.parse(localStorage.getItem(expenseKey)) || defaults; } catch { expenses = defaults; }
+  localStorage.setItem(expenseKey, JSON.stringify(expenses));
   const money = (n) => 'R$ ' + Math.round(n).toLocaleString('pt-BR');
   const total = () => expenses.reduce((sum, [, value]) => sum + Number(value || 0), 0);
   const tabs = document.querySelector('.tabs');
@@ -166,4 +167,4 @@ document.addEventListener('click', function (event) {
   }
   setInterval(updateGoalCopy, 80); updateGoalCopy();
 })();
-</script></body></html>
+</script><script>document.querySelector('.hint b').textContent='Clique na cena para trabalhar';</script></body></html>
