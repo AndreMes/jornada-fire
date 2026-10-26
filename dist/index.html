@@ -177,7 +177,7 @@ document.addEventListener('click', function (event) {
   reset.onclick = null;
   reset.addEventListener('click', () => {
     const freshState = window.eval('S');
-    Object.assign(freshState, { cash: 0, invested: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], drift: 0, last: Date.now() });
+    Object.assign(freshState, { cash: 0, invested: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], drift: 0, last: Date.now() });
     window.onbeforeunload = null;
     ['fire3', 'fire-expenses-v1', 'fire-month-clock-v1'].forEach((key) => localStorage.removeItem(key));
     localStorage.setItem('fire3', JSON.stringify(freshState));
@@ -268,5 +268,78 @@ document.addEventListener('click', function (event) {
     hud();
     if (Date.now() - monthlyLedgerLastSaved >= 1000) { localStorage.setItem('fire3', JSON.stringify(state)); monthlyLedgerLastSaved = Date.now(); }
   }, 100);
+})();
+</script><script>
+(() => {
+  const state = window.eval('S');
+  const actions = [
+    ['☕', 'Turno no escritório', 'Resolva as tarefas do dia', 10, 1000],
+    ['💻', 'Freela rápido', 'Faça uma entrega expressa', 35, 3500],
+    ['🤝', 'Projeto para cliente', 'Reunião, execução e entrega', 110, 8000],
+    ['🚀', 'Virada de sprint', 'Feche uma semana de trabalho', 320, 15000]
+  ];
+  state.activeCooldowns ||= [0, 0, 0, 0];
+  const career = document.getElementById('career');
+  const game = document.querySelector('.game');
+  const format = (value) => 'R$ ' + Math.round(value).toLocaleString('pt-BR');
+
+  function renderActions() {
+    const now = Date.now();
+    career.innerHTML = actions.map(([icon, title, detail, reward, cooldown], index) => {
+      const remaining = Math.max(0, state.activeCooldowns[index] - now);
+      const ready = remaining === 0;
+      const progress = ready ? 100 : Math.max(0, (1 - remaining / cooldown) * 100);
+      return `<article class="active-job ${ready ? 'ready' : 'cooling'}"><span class="ico">${icon}</span><span class="active-copy"><b>${title}</b><small>${detail} · +${format(reward)}</small><i><em style="width:${progress}%"></em></i></span><button data-active-work="${index}" ${ready ? '' : 'disabled'}>${ready ? 'Trabalhar' : `${Math.ceil(remaining / 1000)}s`}</button></article>`;
+    }).join('');
+  }
+  function perform(index) {
+    const now = Date.now();
+    const action = actions[index];
+    if (!action || now < state.activeCooldowns[index]) return;
+    state.cash += action[3];
+    state.activeCooldowns[index] = now + action[4];
+    localStorage.setItem('fire3', JSON.stringify(state));
+    window.eval('draw()');
+    renderActions();
+  }
+  career.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-active-work]');
+    if (button) perform(Number(button.dataset.activeWork));
+  });
+  game.addEventListener('click', (event) => {
+    if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock')) return;
+    event.stopImmediatePropagation();
+    perform(0);
+  }, true);
+  document.querySelector('.hint b').textContent = 'Use as ações de trabalho — cada uma tem seu próprio cooldown.';
+  const style = document.createElement('style');
+  style.textContent = `.active-job{display:grid;grid-template-columns:42px 1fr auto;gap:9px;align-items:center;border-top:1px solid #cfc5a9;padding:10px 0}.active-job:first-child{border-top:0}.active-copy{min-width:0}.active-copy b,.active-copy small{display:block}.active-copy small{font-size:10px;color:#657266;margin-top:2px}.active-copy i{display:block;height:5px;background:#d5ccb4;border-radius:9px;overflow:hidden;margin-top:7px}.active-copy em{display:block;height:100%;background:linear-gradient(90deg,#1a9b5b,#8dd35f);border-radius:inherit}.active-job button{border:0;border-radius:8px;background:#137d4d;color:white;padding:8px 10px;font:800 11px 'DM Sans';cursor:pointer;min-width:70px}.active-job button:disabled{background:#b7ae98;color:#6e6757;cursor:wait}.active-job .ico{width:38px;height:38px;display:grid;place-items:center;background:#e3f1df;border-radius:9px;font-size:20px}`;
+  document.head.appendChild(style);
+  renderActions();
+  setInterval(renderActions, 100);
+})();
+</script><script>
+(() => {
+  const game = document.querySelector('.game');
+  const career = document.getElementById('career');
+  const evolveTab = document.querySelector('.tab[data="evolve"]');
+  const evolvePane = document.getElementById('evolve');
+  const investTab = document.querySelector('.tab[data="invest"]');
+  const investPane = document.getElementById('invest');
+  const dock = document.createElement('section');
+  dock.className = 'active-dock';
+  dock.innerHTML = '<b>TRABALHO ATIVO</b><small>Ações grátis · cada uma recarrega</small>';
+  dock.appendChild(career);
+  game.appendChild(dock);
+  evolveTab.remove();
+  evolvePane.style.display = 'none';
+  evolvePane.classList.remove('active');
+  investTab.classList.add('active');
+  investPane.classList.add('active');
+  const style = document.createElement('style');
+  style.textContent = `
+    .tabs{grid-template-columns:repeat(3,1fr)!important}.active-dock{position:absolute;z-index:3;left:22px;top:92px;width:245px;padding:11px 12px;border:2px solid #426477;background:#082638e8;box-shadow:inset 0 0 0 2px #071624;border-radius:9px;color:#e7fbf5}.active-dock>b{display:block;font:800 11px 'Space Grotesk';color:#f9cf58;letter-spacing:.04em}.active-dock>small{display:block;color:#a9d5cd;font-size:9px;margin:3px 0 5px}.active-dock .active-job{grid-template-columns:31px 1fr auto;border-color:#47706f;padding:7px 0}.active-dock .active-job .ico{width:30px;height:30px;font-size:16px;border-radius:7px}.active-dock .active-copy b{font-size:11px}.active-dock .active-copy small{font-size:9px;color:#c4dcd5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.active-dock .active-copy i{height:4px;margin-top:4px;background:#183b48}.active-dock .active-job button{padding:6px 7px;min-width:59px;font-size:9px}.hint{padding-left:280px}.stage{padding-left:270px}@media(max-width:720px){.active-dock{position:relative;top:auto;left:auto;width:auto;margin:56px 12px 0}.stage{padding-left:0}.hint{padding-left:0}.active-dock .active-job{grid-template-columns:31px 1fr auto}}
+  `;
+  document.head.appendChild(style);
 })();
 </script></body></html>
