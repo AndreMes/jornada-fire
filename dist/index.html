@@ -8,8 +8,8 @@ document.addEventListener('click', function (event) {
   const tab = event.target.closest('.tab');
   if (!tab) return;
   event.stopImmediatePropagation();
-  const target = ['Evoluir', 'Investir', 'Conquistas'].includes(tab.textContent.trim())
-    ? { Evoluir: 'evolve', Investir: 'invest', Conquistas: 'wins' }[tab.textContent.trim()]
+  const target = ['Evoluir', 'Investir', 'Gastos', 'Conquistas'].includes(tab.textContent.trim())
+    ? { Evoluir: 'evolve', Investir: 'invest', Gastos: 'costs', Conquistas: 'wins' }[tab.textContent.trim()]
     : 'evolve';
   document.querySelectorAll('.tab').forEach((item) => item.classList.toggle('active', item === tab));
   document.querySelectorAll('.pane').forEach((pane) => pane.classList.toggle('active', pane.id === target));
