@@ -415,4 +415,21 @@ document.addEventListener('click', function (event) {
   requestAnimationFrame(centerTitleVertically);
   addEventListener('resize', centerTitleVertically);
 })();
+</script><script>
+(() => {
+  const FIXED_MONTHLY_COST = 3000;
+  localStorage.setItem('fire-expenses-v1', JSON.stringify([['Custo de vida fixo', FIXED_MONTHLY_COST]]));
+  const costTab = document.querySelector('.tab[data-target="costs"]');
+  const costPane = document.getElementById('costs');
+  if (costTab) costTab.remove();
+  if (costPane) costPane.style.display = 'none';
+  const tabs = document.querySelector('.tabs');
+  tabs.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
+  function applyFixedCostCopy() {
+    const middle = document.querySelector('.meterrow > div:nth-child(2)');
+    if (middle) middle.innerHTML = '<strong>Plano de liberdade</strong><small>meta: R$ 3.000/mês</small>';
+  }
+  applyFixedCostCopy();
+  setInterval(applyFixedCostCopy, 100);
+})();
 </script></body></html>
