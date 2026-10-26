@@ -276,6 +276,14 @@ document.addEventListener('click', function (event) {
     if (Array.isArray(state.portfolio)) {
       state.invested = state.portfolio.reduce((sum, value) => sum + value, 0) - state.portfolioDebt;
     }
+    let setup = {}; try { setup = JSON.parse(localStorage.getItem('fire-new-game-v1')) || {}; } catch {}
+    const inflation = Number(setup.inflation || 0);
+    if (inflation > 0) {
+      try {
+        const updatedCosts = (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).map(([name, value]) => [name, Number(value || 0) * (1 + inflation)]);
+        localStorage.setItem('fire-expenses-v1', JSON.stringify(updatedCosts));
+      } catch {}
+    }
     clock.month += 1;
     clock.started += MONTH_MS;
     localStorage.setItem('fire3', JSON.stringify(state));
@@ -478,7 +486,9 @@ document.addEventListener('click', function (event) {
 </script><script>
 (() => {
   const FIXED_MONTHLY_COST = 3000;
-  localStorage.setItem('fire-expenses-v1', JSON.stringify([['Custo de vida fixo', FIXED_MONTHLY_COST]]));
+  if (!localStorage.getItem('fire-expenses-v1')) {
+    localStorage.setItem('fire-expenses-v1', JSON.stringify([['Custo de vida fixo', FIXED_MONTHLY_COST]]));
+  }
   const costTab = document.querySelector('.tab[data-target="costs"]');
   const costPane = document.getElementById('costs');
   if (costTab) costTab.remove();
@@ -486,8 +496,10 @@ document.addEventListener('click', function (event) {
   const tabs = document.querySelector('.tabs');
   tabs.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
   function applyFixedCostCopy() {
+    let cost = FIXED_MONTHLY_COST;
+    try { cost = (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((sum, [, value]) => sum + Number(value || 0), 0); } catch {}
     const middle = document.querySelector('.meterrow > div:nth-child(2)');
-    if (middle) middle.innerHTML = '<strong>Plano de liberdade</strong><small>meta: R$ 3.000/mês</small>';
+    if (middle) middle.innerHTML = `<strong>Plano de liberdade</strong><small>meta: R$ ${Math.round(cost).toLocaleString('pt-BR')}/mês</small>`;
   }
   applyFixedCostCopy();
   setInterval(applyFixedCostCopy, 100);
@@ -644,7 +656,8 @@ document.addEventListener('click', function (event) {
   const list = document.getElementById('achievements');
   function fireState() {
     const state = window.eval('S');
-    const costs = 3000;
+    let costs = 3000;
+    try { costs = (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((sum, [, value]) => sum + Number(value || 0), 0); } catch {}
     const portfolioTotal = (state.portfolio || []).reduce((sum, value) => sum + Number(value || 0), 0);
     const projectedIncome = Math.max(0, Number(state.invested || 0)) / 300;
     return { costs, portfolioTotal, coverage: costs ? projectedIncome / costs * 100 : 0 };
@@ -655,5 +668,39 @@ document.addEventListener('click', function (event) {
   }
   setInterval(renderMilestones, 250);
   renderMilestones();
+})();
+</script><style>
+  .new-game-overlay{position:fixed;inset:0;z-index:100;background:linear-gradient(135deg,#06251ddd,#071f35e8),url('assets/fire-journey-hero.png') center/cover;display:grid;place-items:center;padding:20px;color:#fff}
+  .new-game-card{width:min(520px,100%);background:#fffdf5;color:#20362a;border:4px solid #204657;border-radius:20px;padding:24px;box-shadow:0 18px 50px #0009}
+  .new-game-card h1{font:800 30px 'Space Grotesk';margin:0;color:#11784b}.new-game-card p{margin:5px 0 18px;color:#5d716b;font-size:13px}.new-game-card label{display:block;font:800 12px 'DM Sans';margin:15px 0 7px}.new-game-card input{width:100%;border:2px solid #cad9cc;border-radius:10px;padding:11px 12px;font:700 14px 'DM Sans';color:#20362a}.new-game-options{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.new-game-options.initial{grid-template-columns:repeat(3,1fr)}.new-game-options label{margin:0}.new-game-options input{position:absolute;opacity:0;pointer-events:none}.new-game-options span{display:grid;place-items:center;min-height:42px;padding:6px 3px;background:#e5eddf;border:2px solid transparent;border-radius:9px;color:#34604d;font-size:11px;text-align:center}.new-game-options input:checked+span{background:#d9f2bc;border-color:#13834f;color:#075138}.new-game-card button{width:100%;border:0;border-radius:11px;background:#107b4d;color:#fff;padding:13px;margin-top:20px;font:800 14px 'DM Sans';box-shadow:inset 0 -3px #075138}@media(max-width:520px){.new-game-card{padding:19px}.new-game-options{grid-template-columns:repeat(3,1fr)}.new-game-options.initial{grid-template-columns:repeat(3,1fr)}}
+</style><script>
+(() => {
+  const profileKey = 'fire-new-game-v1';
+  const stateKey = 'fire3';
+  const reset = document.getElementById('reset');
+  reset.addEventListener('click', (event) => {
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (!confirm('Começar uma nova jornada? O progresso atual será apagado.')) return;
+    [stateKey, 'fire-expenses-v1', 'fire-month-clock-v1', profileKey].forEach((key) => localStorage.removeItem(key));
+    location.reload();
+  }, true);
+  if (localStorage.getItem(profileKey) || localStorage.getItem(stateKey)) return;
+  const overlay = document.createElement('section');
+  overlay.className = 'new-game-overlay';
+  overlay.innerHTML = `<form class="new-game-card"><h1>Comece sua jornada FIRE</h1><p>Defina o cenário econômico e encontre seu caminho até a liberdade.</p><label for="rankingName">Nome no ranking</label><input id="rankingName" name="name" maxlength="20" placeholder="Seu nome" required autofocus><label>Inflação mensal</label><div class="new-game-options">${[[.04,'4% a.m.'],[.06,'6% a.m.'],[.12,'12% a.m.'],[.24,'24% a.m.'],[1,'100% a.m.']].map(([value,label], index) => `<label><input type="radio" name="inflation" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><label>Patrimônio inicial</label><div class="new-game-options initial">${[[-100000,'−R$ 100 mil'],[0,'R$ 0'],[100000,'R$ 100 mil']].map(([value,label], index) => `<label><input type="radio" name="initialWealth" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><button type="submit">Iniciar jornada</button></form>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const name = form.elements.name.value.trim();
+    if (!name) return form.elements.name.focus();
+    const initialWealth = Number(form.elements.initialWealth.value);
+    const state = { cash: 0, invested: initialWealth, portfolio: initialWealth > 0 ? [0, initialWealth, 0, 0] : [0, 0, 0, 0], portfolioDebt: Math.max(0, -initialWealth), salary: 1500, studyLevel: 0, businessAttempts: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], activeJobs: [0, 0, 0, 0], drift: 0, last: Date.now() };
+    localStorage.setItem(profileKey, JSON.stringify({ name, inflation: Number(form.elements.inflation.value), initialWealth }));
+    localStorage.setItem(stateKey, JSON.stringify(state));
+    localStorage.setItem('fire-expenses-v1', JSON.stringify([['Custo de vida fixo', 3000]]));
+    localStorage.setItem('fire-month-clock-v1', JSON.stringify({ started: Date.now(), month: 1 }));
+    location.reload();
+  });
 })();
 </script></body></html>
