@@ -218,6 +218,7 @@ document.addEventListener('click', function (event) {
   let clock;
   try { clock = JSON.parse(localStorage.getItem('fire-month-clock-v1')) || { started: Date.now(), month: 1 }; }
   catch { clock = { started: Date.now(), month: 1 }; }
+  localStorage.setItem('fire-month-clock-v1', JSON.stringify(clock));
 
   const totalCosts = () => {
     try { return (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).reduce((sum, [, value]) => sum + Number(value || 0), 0); }
