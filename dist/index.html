@@ -150,7 +150,7 @@ document.addEventListener('click', function (event) {
   const work = document.getElementById('work');
   const earn = work.onclick; work.onclick = null;
   game.addEventListener('click', (event) => {
-    if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock')) return;
+    if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock') || event.target.closest('.active-dock')) return;
     earn();
   });
   const style = document.createElement('style');
@@ -307,7 +307,7 @@ document.addEventListener('click', function (event) {
     if (button) perform(Number(button.dataset.activeWork));
   });
   game.addEventListener('click', (event) => {
-    if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock')) return;
+    if (event.target.closest('.wealth-hud') || event.target.closest('.month-clock') || event.target.closest('.active-dock')) return;
     event.stopImmediatePropagation();
     perform(0);
   }, true);
