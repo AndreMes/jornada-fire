@@ -189,10 +189,7 @@ document.addEventListener('click', function (event) {
     const state = JSON.parse(localStorage.getItem('fire3') || '{}');
     const expenses = JSON.parse(localStorage.getItem('fire-expenses-v1') || '[]');
     const costs = expenses.reduce((sum, [, value]) => sum + Number(value || 0), 0);
-    const bonus = (state.b || [0, 0, 0]).reduce((sum, value, index) => sum + value * [.15, .35, .7][index], 0);
-    const income = Number(state.invested || 0) > 0
-      ? (state.a || [0, 0, 0, 0]).reduce((sum, value, index) => sum + value * ([.5, 1, 1.8, 3][index] + bonus), 0)
-      : 0;
+    const income = Math.max(0, Number(state.invested || 0)) / 300;
     const percent = costs ? Math.floor(Math.max(0, income / costs * 100)) : 0;
     return `Sua renda passiva cobre ${percent}% do seu custo de vida de R$ ${Math.round(costs).toLocaleString('pt-BR')}/mês.`;
   };
@@ -624,12 +621,39 @@ document.addEventListener('click', function (event) {
   #invest .card { padding:11px 14px; margin-bottom:8px; }
   #invest .card h2 { font-size:18px; margin-bottom:6px; }
   #invest .card > p { margin-bottom:6px; }
-  #invest .portfolio-asset { padding:8px 10px; margin:6px 0; }
+  #invest .portfolio-asset { padding:10px 12px; margin:8px 0; }
   #invest [data-balance], #invest [data-debt-balance] { display:block; margin-top:2px; }
-  #invest .portfolio-controls { margin-top:6px; gap:5px; }
-  #invest .portfolio-controls button { padding:6px 5px; font-size:9px; }
+  #invest .portfolio-controls { margin-top:8px; gap:6px; }
+  #invest .portfolio-controls button { padding:7px 6px; font-size:9.5px; }
   @media (min-width:901px) {
-    #invest #assets { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+    #invest #assets { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
     #invest .portfolio-asset { margin:0; }
   }
-</style></body></html>
+</style><script>
+(() => {
+  const milestones = [
+    ['🌱', 'Primeiro aporte', 'Tenha R$ 100 investidos.', state => state.portfolioTotal >= 100],
+    ['🛟', 'Reserva de 1 mês', 'Acumule um mês do seu custo de vida.', state => state.portfolioTotal >= state.costs],
+    ['🧱', 'Reserva sólida', 'Acumule três meses do seu custo de vida.', state => state.portfolioTotal >= state.costs * 3],
+    ['☕', 'Barista FIRE', 'A regra dos 4% cobre 25% do custo de vida.', state => state.coverage >= 25],
+    ['🌤️', 'Coast FIRE', 'A regra dos 4% cobre 50% do custo de vida.', state => state.coverage >= 50],
+    ['🧭', 'Semi-FIRE', 'A regra dos 4% cobre 75% do custo de vida.', state => state.coverage >= 75],
+    ['🏝️', 'FIRE', 'A regra dos 4% cobre 100% do custo de vida.', state => state.coverage >= 100],
+    ['🌴', 'Fat FIRE', 'A regra dos 4% cobre 150% do custo de vida.', state => state.coverage >= 150]
+  ];
+  const list = document.getElementById('achievements');
+  function fireState() {
+    const state = window.eval('S');
+    const costs = 3000;
+    const portfolioTotal = (state.portfolio || []).reduce((sum, value) => sum + Number(value || 0), 0);
+    const projectedIncome = Math.max(0, Number(state.invested || 0)) / 300;
+    return { costs, portfolioTotal, coverage: costs ? projectedIncome / costs * 100 : 0 };
+  }
+  function renderMilestones() {
+    const state = fireState();
+    list.innerHTML = milestones.map(([icon, title, detail, unlocked]) => `<div class="row ${unlocked(state) ? '' : 'locked'}"><span class="badge">${icon}</span><span><b>${title}</b><small>${detail}</small></span></div>`).join('');
+  }
+  setInterval(renderMilestones, 250);
+  renderMilestones();
+})();
+</script></body></html>
