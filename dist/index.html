@@ -112,7 +112,7 @@ document.addEventListener('click', function (event) {
     const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
     document.getElementById('monthFill').style.width = (progress * 100) + '%';
     document.getElementById('monthLabel').textContent = 'Mês ' + clock.month;
-    document.getElementById('monthDetail').textContent = 'Fechamento em ' + Math.max(0, Math.ceil((1 - progress) * 60)) + 's';
+    document.getElementById('monthDetail').textContent = 'Fechamento em ' + Math.max(0, Math.ceil((1 - progress) * 30)) + 's';
   }, 100);
 })();
 </script><script>
@@ -240,6 +240,14 @@ document.addEventListener('click', function (event) {
   function closeMonth() {
     const costs = totalCosts();
     state.salary = Number(state.salary || 1500);
+    let interest = 0;
+    if (Array.isArray(state.portfolio) && state.portfolioDebt > 0) {
+      interest = state.portfolioDebt * DEBT_RATE;
+      state.portfolioDebt += interest;
+    } else if (!Array.isArray(state.portfolio) && state.invested < 0) {
+      interest = Math.abs(state.invested) * DEBT_RATE;
+      state.invested -= interest;
+    }
     let promoted = false;
     const studyTarget = 30000 - (30000 - 1500) * Math.exp(-Number(state.studyLevel || 0) / 24);
     if (state.studyLevel > 0 && Math.random() < 0.20 && studyTarget > state.salary) {
@@ -268,16 +276,8 @@ document.addEventListener('click', function (event) {
     } else if (remaining > 0) {
       state.invested -= remaining;
     }
-    let interest = 0;
     if (Array.isArray(state.portfolio)) {
-      if (state.portfolioDebt > 0) {
-        interest = state.portfolioDebt * DEBT_RATE;
-        state.portfolioDebt += interest;
-      }
       state.invested = state.portfolio.reduce((sum, value) => sum + value, 0) - state.portfolioDebt;
-    } else if (state.invested < 0) {
-      interest = Math.abs(state.invested) * DEBT_RATE;
-      state.invested -= interest;
     }
     clock.month += 1;
     clock.started += MONTH_MS;
@@ -301,7 +301,7 @@ document.addEventListener('click', function (event) {
     const progress = Math.max(0, Math.min(1, (Date.now() - clock.started) / MONTH_MS));
     monthBar.style.width = `${progress * 100}%`;
     monthLabel.textContent = `Mês ${clock.month}`;
-    monthDetail.textContent = `Fechamento em ${Math.max(0, Math.ceil((1 - progress) * 60))}s`;
+    monthDetail.textContent = `Fechamento em ${Math.max(0, Math.ceil((1 - progress) * 30))}s`;
     hud();
     if (Date.now() - monthlyLedgerLastSaved >= 1000) { localStorage.setItem('fire3', JSON.stringify(state)); monthlyLedgerLastSaved = Date.now(); }
   }, 100);
