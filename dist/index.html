@@ -14,4 +14,60 @@ document.addEventListener('click', function (event) {
   document.querySelectorAll('.tab').forEach((item) => item.classList.toggle('active', item === tab));
   document.querySelectorAll('.pane').forEach((pane) => pane.classList.toggle('active', pane.id === target));
 }, true);
+</script><script>
+(() => {
+  const expenseKey = 'fire-expenses-v1';
+  const defaults = [
+    ['Moradia — aluguel', 1600], ['Condomínio e IPTU', 350], ['Energia, água e gás', 300],
+    ['Internet e celular', 170], ['Mercado e alimentação', 900], ['Transporte', 450],
+    ['Saúde e medicamentos', 350], ['Seguros', 120], ['Cuidados pessoais', 250],
+    ['Lazer e cultura', 300], ['Educação', 250], ['Imprevistos', 200]
+  ];
+  let expenses;
+  try { expenses = JSON.parse(localStorage.getItem(expenseKey)) || defaults; } catch { expenses = defaults; }
+  const money = (n) => 'R$ ' + Math.round(n).toLocaleString('pt-BR');
+  const total = () => expenses.reduce((sum, [, value]) => sum + Number(value || 0), 0);
+  const tabs = document.querySelector('.tabs');
+  const costsTab = document.createElement('button');
+  costsTab.className = 'tab'; costsTab.dataset.target = 'costs'; costsTab.textContent = 'Gastos';
+  tabs.insertBefore(costsTab, tabs.children[2]);
+  const costsPane = document.createElement('section');
+  costsPane.className = 'pane'; costsPane.id = 'costs';
+  costsPane.innerHTML = `<div class="card wallet"><small>SEU CUSTO DE VIDA MENSAL</small><div class="value" id="expenseTotal">R$ 0</div><div class="split"><div>Meta de renda passiva<strong id="expenseGoal">R$ 0/mês</strong></div><div>Margem atual<strong id="expenseGap">R$ 0</strong></div></div></div><div class="card"><h2>Gastos básicos</h2><p>Estes valores formam a vida que você quer sustentar. Edite livremente: o objetivo FIRE se ajusta na hora.</p><div id="expenseList"></div></div>`;
+  document.querySelector('.side').appendChild(costsPane);
+  const style = document.createElement('style');
+  style.textContent = `.tabs{grid-template-columns:repeat(4,1fr)}.expense{display:grid;grid-template-columns:1fr 105px;gap:10px;align-items:center;border-top:1px solid #cfc5a9;padding:9px 0;font-size:12px}.expense:first-child{border-top:0}.expense input{width:100%;border:1px solid #d5cab0;border-radius:8px;padding:8px;background:#fffdf5;color:#20362a;font:700 11px DM Sans}`;
+  document.head.appendChild(style);
+  function renderExpenses() {
+    let game = {}; try { game = JSON.parse(localStorage.getItem('fire3')) || {}; } catch {}
+    const holdings = game.a || [0, 0, 0, 0], upgrades = game.b || [0, 0, 0];
+    const strategyBonus = upgrades.reduce((sum, level, index) => sum + level * [.15, .35, .7][index], 0);
+    const monthly = holdings.reduce((sum, count, index) => sum + count * ([.5, 1, 1.8, 3][index] + strategyBonus), 0);
+    const goal = total(), gap = monthly - goal, pct = goal ? Math.max(0, Math.min(100, monthly / goal * 100)) : 100;
+    document.getElementById('expenseTotal').textContent = money(goal);
+    document.getElementById('expenseGoal').textContent = money(goal) + '/mês';
+    document.getElementById('expenseGap').textContent = (gap >= 0 ? '+' : '−') + money(Math.abs(gap));
+    const list = document.getElementById('expenseList');
+    list.innerHTML = expenses.map(([name, value], i) => `<label class="expense"><span>${name}</span><input type="number" min="0" step="10" value="${value}" data-expense="${i}" aria-label="${name}"></label>`).join('');
+    const middle = document.querySelector('.meterrow > div:nth-child(2)');
+    if (middle) middle.innerHTML = `<strong>Plano de liberdade</strong><small>meta: ${money(goal)}/mês</small>`;
+    document.getElementById('bar').style.width = pct + '%';
+    const mapBar = document.getElementById('mapbar'); if (mapBar) mapBar.style.width = pct + '%';
+    const coverage = document.getElementById('coverage'); if (coverage) coverage.textContent = `Sua renda passiva cobre ${Math.floor(pct)}% do seu custo de vida de ${money(goal)}/mês.`;
+  }
+  costsPane.addEventListener('input', (event) => {
+    const input = event.target.closest('[data-expense]'); if (!input) return;
+    expenses[Number(input.dataset.expense)][1] = Math.max(0, Number(input.value || 0));
+    localStorage.setItem(expenseKey, JSON.stringify(expenses)); renderExpenses();
+  });
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.tab'); if (!tab) return;
+    const target = tab.dataset.target || ({ Evoluir: 'evolve', Investir: 'invest', Gastos: 'costs', Conquistas: 'wins' }[tab.textContent.trim()]);
+    if (!target) return;
+    event.stopImmediatePropagation();
+    document.querySelectorAll('.tab').forEach((item) => item.classList.toggle('active', item === tab));
+    document.querySelectorAll('.pane').forEach((pane) => pane.classList.toggle('active', pane.id === target));
+  }, true);
+  setInterval(renderExpenses, 300); renderExpenses();
+})();
 </script></body></html>
