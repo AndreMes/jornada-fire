@@ -529,8 +529,12 @@ document.addEventListener('click', function (event) {
   strategyCard.style.display = 'none';
   assetsEl.closest('.card').querySelector('p').textContent = 'Monte seu portfólio e mova recursos quando quiser. Os retornos oscilam; os parâmetros não são exibidos.';
   function ensureCards() {
-    if (assetsEl.querySelectorAll('[data-portfolio-asset]').length === assets.length) return;
-    assetsEl.innerHTML = assets.map((asset, index) => `<article class="portfolio-asset" data-portfolio-asset="${index}"><div class="investhead"><span><b>${asset.icon} ${asset.name}</b><small data-balance>R$ 0</small></span><span class="tag">${asset.risk}</span></div><small>${asset.monthlyOnly ? 'Atualização no fechamento mensal' : 'Oscilação em tempo real'}</small><div class="portfolio-controls"><div class="portfolio-percentages"><button data-portfolio-percent="10">10%</button><button data-portfolio-percent="25">25%</button><button data-portfolio-percent="50">50%</button><button data-portfolio-percent="100">100%</button></div><button data-portfolio-action="withdraw">Resgatar tudo</button></div></article>`).join('');
+    const hasDebt = state.portfolioDebt > .01;
+    if (assetsEl.querySelectorAll('[data-portfolio-asset]').length === assets.length && assetsEl.dataset.debtVisible === String(hasDebt)) return;
+    const assetCards = assets.map((asset, index) => `<article class="portfolio-asset" data-portfolio-asset="${index}"><div class="investhead"><span><b>${asset.icon} ${asset.name}</b><small data-balance>R$ 0</small></span><span class="tag">${asset.risk}</span></div><small>${asset.monthlyOnly ? 'Atualização no fechamento mensal' : 'Oscilação em tempo real'}</small><div class="portfolio-controls"><div class="portfolio-percentages"><button data-portfolio-percent="10">10%</button><button data-portfolio-percent="25">25%</button><button data-portfolio-percent="50">50%</button><button data-portfolio-percent="100">100%</button></div><button data-portfolio-action="withdraw">Resgatar tudo</button></div></article>`).join('');
+    const debtCard = hasDebt ? `<article class="portfolio-asset debt-asset" data-debt-asset><div class="investhead"><span><b>💳 Dívidas</b><small data-debt-balance>R$ 0</small></span><span class="tag">Extremo</span></div><small>Juros do cartão: −15% ao mês · sem oscilação</small><div class="portfolio-controls"><div class="portfolio-percentages"><button data-debt-percent="10">10%</button><button data-debt-percent="25">25%</button><button data-debt-percent="50">50%</button><button data-debt-percent="100">100%</button></div><button data-debt-action="pay-all">Quitar tudo</button></div></article>` : '';
+    assetsEl.dataset.debtVisible = String(hasDebt);
+    assetsEl.innerHTML = assetCards + debtCard;
   }
   function renderPortfolio() {
     ensureCards();
@@ -538,6 +542,8 @@ document.addEventListener('click', function (event) {
     assetsEl.querySelectorAll('[data-portfolio-asset]').forEach((card, index) => {
       card.querySelector('[data-balance]').textContent = money(state.portfolio[index]);
     });
+    const debtBalance = assetsEl.querySelector('[data-debt-balance]');
+    if (debtBalance) debtBalance.textContent = money(state.portfolioDebt);
     document.getElementById('invested').textContent = money(state.invested);
     document.getElementById('yield').textContent = 'Retorno variável';
     document.getElementById('variation').textContent = 'Oscilando agora';
@@ -549,8 +555,22 @@ document.addEventListener('click', function (event) {
     if (meterLabel) meterLabel.textContent = 'carteira';
   }
   assetsEl.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-portfolio-action],[data-portfolio-percent]');
+    const button = event.target.closest('[data-portfolio-action],[data-portfolio-percent],[data-debt-action],[data-debt-percent]');
     if (!button) return;
+    const debtCard = button.closest('[data-debt-asset]');
+    if (debtCard) {
+      const percent = Number(button.dataset.debtPercent || 0);
+      const amount = button.dataset.debtAction === 'pay-all'
+        ? Math.min(state.cash, state.portfolioDebt)
+        : Math.min(state.portfolioDebt, state.cash * percent / 100);
+      if (!amount) return;
+      state.cash -= amount;
+      state.portfolioDebt = Math.max(0, state.portfolioDebt - amount);
+      syncWealth();
+      localStorage.setItem('fire3', JSON.stringify(state));
+      renderPortfolio();
+      return;
+    }
     const card = button.closest('[data-portfolio-asset]');
     const index = Number(card.dataset.portfolioAsset);
     const percent = Number(button.dataset.portfolioPercent || 0);
