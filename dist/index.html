@@ -677,9 +677,11 @@ document.addEventListener('click', function (event) {
 (() => {
   const profileKey = 'fire-new-game-v1';
   const stateKey = 'fire3';
-  const reset = document.getElementById('reset');
+  const oldReset = document.getElementById('reset');
+  const reset = oldReset.cloneNode(true);
+  oldReset.replaceWith(reset);
   reset.addEventListener('click', (event) => {
-    event.preventDefault(); event.stopImmediatePropagation();
+    event.preventDefault();
     if (!confirm('Começar uma nova jornada? O progresso atual será apagado.')) return;
     [stateKey, 'fire-expenses-v1', 'fire-month-clock-v1', profileKey].forEach((key) => localStorage.removeItem(key));
     location.reload();
