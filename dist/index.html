@@ -277,7 +277,7 @@ document.addEventListener('click', function (event) {
       state.invested = state.portfolio.reduce((sum, value) => sum + value, 0) - state.portfolioDebt;
     }
     let setup = {}; try { setup = JSON.parse(localStorage.getItem('fire-new-game-v1')) || {}; } catch {}
-    const inflation = Number(setup.inflation || 0);
+    const inflation = Math.pow(1 + Number(setup.inflation || 0), 1 / 12) - 1;
     if (inflation > 0) {
       try {
         const updatedCosts = (JSON.parse(localStorage.getItem('fire-expenses-v1')) || []).map(([name, value]) => [name, Number(value || 0) * (1 + inflation)]);
@@ -696,7 +696,7 @@ document.addEventListener('click', function (event) {
   if (localStorage.getItem(profileKey) || localStorage.getItem(stateKey)) return;
   const overlay = document.createElement('section');
   overlay.className = 'new-game-overlay';
-  overlay.innerHTML = `<form class="new-game-card"><h1>Comece sua jornada FIRE</h1><p>Defina o cenário econômico e encontre seu caminho até a liberdade.</p><label for="rankingName">Nome no ranking</label><input id="rankingName" name="name" maxlength="20" placeholder="Seu nome" required autofocus><label>Inflação mensal</label><div class="new-game-options">${[[.04,'4% a.m.'],[.06,'6% a.m.'],[.12,'12% a.m.'],[.24,'24% a.m.'],[1,'100% a.m.']].map(([value,label], index) => `<label><input type="radio" name="inflation" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><label>Patrimônio inicial</label><div class="new-game-options initial">${[[-100000,'−R$ 100 mil'],[0,'R$ 0'],[100000,'R$ 100 mil']].map(([value,label], index) => `<label><input type="radio" name="initialWealth" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><button type="submit">Iniciar jornada</button></form>`;
+  overlay.innerHTML = `<form class="new-game-card"><h1>Comece sua jornada FIRE</h1><p>Defina o cenário econômico e encontre seu caminho até a liberdade.</p><label for="rankingName">Nome no ranking</label><input id="rankingName" name="name" maxlength="20" placeholder="Seu nome" required autofocus><label>Inflação anual</label><div class="new-game-options">${[[.04,'4% a.a.'],[.06,'6% a.a.'],[.12,'12% a.a.'],[.24,'24% a.a.'],[1,'100% a.a.']].map(([value,label], index) => `<label><input type="radio" name="inflation" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><label>Gasto mensal</label><div class="new-game-options">${[[2000,'R$ 2 mil'],[3000,'R$ 3 mil'],[5000,'R$ 5 mil'],[10000,'R$ 10 mil'],[30000,'R$ 30 mil']].map(([value,label], index) => `<label><input type="radio" name="monthlyCost" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><label>Patrimônio inicial</label><div class="new-game-options initial">${[[-100000,'−R$ 100 mil'],[0,'R$ 0'],[100000,'R$ 100 mil']].map(([value,label], index) => `<label><input type="radio" name="initialWealth" value="${value}" ${index === 1 ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div><button type="submit">Iniciar jornada</button></form>`;
   document.body.appendChild(overlay);
   overlay.querySelector('form').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -704,11 +704,12 @@ document.addEventListener('click', function (event) {
     const name = form.elements.name.value.trim();
     if (!name) return form.elements.name.focus();
     const initialWealth = Number(form.elements.initialWealth.value);
+    const monthlyCost = Number(form.elements.monthlyCost.value);
     const state = { cash: 0, invested: initialWealth, portfolio: initialWealth > 0 ? [0, initialWealth, 0, 0] : [0, 0, 0, 0], portfolioDebt: Math.max(0, -initialWealth), salary: 1500, studyLevel: 0, businessAttempts: 0, j: [0, 0, 0, 0], a: [0, 0, 0, 0], b: [0, 0, 0], activeCooldowns: [0, 0, 0, 0], activeJobs: [0, 0, 0, 0], drift: 0, last: Date.now() };
     Object.assign(window.eval('S'), state);
-    localStorage.setItem(profileKey, JSON.stringify({ name, inflation: Number(form.elements.inflation.value), initialWealth }));
+    localStorage.setItem(profileKey, JSON.stringify({ name, inflation: Number(form.elements.inflation.value), monthlyCost, initialWealth }));
     localStorage.setItem(stateKey, JSON.stringify(state));
-    localStorage.setItem('fire-expenses-v1', JSON.stringify([['Custo de vida fixo', 3000]]));
+    localStorage.setItem('fire-expenses-v1', JSON.stringify([['Custo de vida fixo', monthlyCost]]));
     localStorage.setItem('fire-month-clock-v1', JSON.stringify({ started: Date.now(), month: 1 }));
     location.reload();
   });
